@@ -50,7 +50,7 @@ class DjangoSettings(BaseSettings):
     # Configurações de segurança
     secret_key: str = Field(default="django-insecure")
     debug: bool = Field(default=True)
-    allowed_hosts_raw: list[str] = Field(
+    allowed_hosts_raw: str | list[str] = Field(
         default=["*"],
         alias="ALLOWED_HOSTS",
     )
