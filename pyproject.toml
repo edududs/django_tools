@@ -1,0 +1,24 @@
+[project]
+name = "django_tools"
+version = "0.1.0"
+description = "Configurações Django padronizadas para APIs"
+readme = "README.md"
+authors = [
+    { name = "Eduardo Jesus", email = "dudulj15@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.5.3",
+    "django>=5.2.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.8.15,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["django_tools*"]
+exclude = ["tests*", "docs*"]
