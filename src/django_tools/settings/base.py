@@ -2,6 +2,7 @@
 import json
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -84,7 +85,7 @@ class CelerySettings(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def config(self) -> dict:
+    def config(self) -> dict[str, Any]:
         """Retorna configuração do Celery como dicionário."""
         return {
             "broker_url": self.broker_url,
@@ -132,6 +133,17 @@ class RedisSettings(BaseModel):
         auth = f":{self.password}@" if self.password else ""
         return f"redis://{auth}{self.host}:{self.port}/{self.db}"
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def config(self) -> dict[str, Any]:
+        """Configuração do Redis."""
+        return {
+            "host": self.host,
+            "port": self.port,
+            "db": self.db,
+            "password": self.password,
+        }
+
 
 class TemplateSettings(BaseModel):
     """Template configuration settings."""
@@ -149,7 +161,7 @@ class TemplateSettings(BaseModel):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def config(self) -> list[dict]:
+    def config(self) -> list[dict[str, Any]]:
         """Retorna configuração de templates como lista de dicionários."""
         return [
             {
@@ -311,7 +323,7 @@ class DjangoSettings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def celery_config(self) -> dict:
+    def celery_config(self) -> dict[str, Any]:
         """Configuração do Celery."""
         return self.celery.config
 
@@ -323,12 +335,18 @@ class DjangoSettings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def templates(self) -> list[dict]:
+    def redis_config(self) -> dict[str, Any]:
+        """Configuração do Redis."""
+        return self.redis.config
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def templates(self) -> list[dict[str, Any]]:
         """Configuração de templates."""
         return self.template.config
 
     @property
-    def default_logging(self) -> dict:
+    def default_logging(self) -> dict[str, Any]:
         return {
             "version": 1,
             "disable_existing_loggers": False,
@@ -364,7 +382,7 @@ class DjangoSettings(BaseSettings):
 
     # Configurações de senha
     @property
-    def default_auth_password_validators(self) -> list[dict]:
+    def default_auth_password_validators(self) -> list[dict[str, str]]:
         return [
             {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
             {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -374,7 +392,7 @@ class DjangoSettings(BaseSettings):
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def databases(self) -> dict:
+    def databases(self) -> dict[str, dict[str, Any]]:
         """Configuração de banco de dados."""
         db_settings = self.database
         db_config = {"ENGINE": db_settings.engine}
@@ -393,7 +411,7 @@ class DjangoSettings(BaseSettings):
     # Configurações específicas da aplicação
     api_name: str = Field(default="core")
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Retorna configuração do Django como um dicionário."""
         result = {}
         for key in DJANGO_SETTINGS_KEYS:
