@@ -8,7 +8,7 @@ from django.conf import Settings
 def setup_django(
     project_root: str = "",
     app_name: str = "core",
-):
+) -> None:
     """Configura o ambiente Django para execução standalone.
 
     Args:
@@ -29,7 +29,7 @@ def setup_django(
     django.setup()
 
 
-def setup_django_if_needed(settings: type[Settings] | None = None, app_name: str = "core"):
+def setup_django_if_needed(settings: type[Settings] | None = None, app_name: str = "core") -> None:
     """Configura o ambiente Django caso ainda não esteja configurado.
 
     Args:

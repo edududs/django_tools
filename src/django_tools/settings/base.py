@@ -82,7 +82,7 @@ class CelerySettings(BaseModel):
         description="Máximo de tarefas por processo worker antes de reiniciar",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def config(self) -> dict:
         """Retorna configuração do Celery como dicionário."""
@@ -125,7 +125,7 @@ class RedisSettings(BaseModel):
         description="Senha do Redis (opcional)",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def url(self) -> str:
         """URL completa do Redis."""
@@ -147,7 +147,7 @@ class TemplateSettings(BaseModel):
         ]
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def config(self) -> list[dict]:
         """Retorna configuração de templates como lista de dicionários."""
@@ -173,7 +173,7 @@ class SecuritySettings(BaseModel):
         alias="ALLOWED_HOSTS",
     )
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def allowed_hosts(self) -> list[str]:
         """Interpreta ALLOWED_HOSTS de string para lista."""
@@ -206,7 +206,7 @@ class InternationalizationSettings(BaseModel):
 class DjangoSettings(BaseSettings):
     """Main Django settings using Pydantic v2."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         env_file = kwargs.pop("env_file")
         if env_file:
             config = SettingsConfigDict(
@@ -238,7 +238,7 @@ class DjangoSettings(BaseSettings):
 
     # Configurações de aplicação
     @property
-    def default_installed_apps(self):
+    def default_installed_apps(self) -> list[str]:
         return [
             "django.contrib.admin",
             "django.contrib.auth",
@@ -249,7 +249,7 @@ class DjangoSettings(BaseSettings):
         ]
 
     @property
-    def default_middleware(self):
+    def default_middleware(self) -> list[str]:
         return [
             "django.middleware.security.SecurityMiddleware",
             "django.contrib.sessions.middleware.SessionMiddleware",
@@ -267,68 +267,68 @@ class DjangoSettings(BaseSettings):
     default_logging_config: str = "logging.config.dictConfig"
 
     # Propriedades computadas que delegam para os schemas
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def secret_key(self) -> str:
         """Chave secreta do Django."""
         return self.security.secret_key
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def debug(self) -> bool:
         """Modo debug do Django."""
         return self.security.debug
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def allowed_hosts(self) -> list[str]:
         """Hosts permitidos."""
         return self.security.allowed_hosts
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def language_code(self) -> str:
         """Código do idioma."""
         return self.internationalization.language_code
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def time_zone(self) -> str:
         """Fuso horário."""
         return self.internationalization.time_zone
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def use_i18n(self) -> bool:
         """Usar internacionalização."""
         return self.internationalization.use_i18n
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def use_tz(self) -> bool:
         """Usar timezone."""
         return self.internationalization.use_tz
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def celery_config(self) -> dict:
         """Configuração do Celery."""
         return self.celery.config
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def redis_url(self) -> str:
         """URL completa do Redis."""
         return self.redis.url
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def templates(self) -> list[dict]:
         """Configuração de templates."""
         return self.template.config
 
     @property
-    def default_logging(self):
+    def default_logging(self) -> dict:
         return {
             "version": 1,
             "disable_existing_loggers": False,
@@ -364,7 +364,7 @@ class DjangoSettings(BaseSettings):
 
     # Configurações de senha
     @property
-    def default_auth_password_validators(self):
+    def default_auth_password_validators(self) -> list[dict]:
         return [
             {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
             {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -372,7 +372,7 @@ class DjangoSettings(BaseSettings):
             {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
         ]
 
-    @computed_field  # type: ignore[misc]
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def databases(self) -> dict:
         """Configuração de banco de dados."""
