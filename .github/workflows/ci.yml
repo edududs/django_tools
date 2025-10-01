@@ -31,12 +31,16 @@ jobs:
       run: |
         uv sync --dev
     
-    - name: Run linting
+    - name: Verify Ruff installation
+      run: |
+        uv run ruff --version
+    
+    - name: Run linting with Ruff
       run: |
         uv run ruff check src/
         uv run ruff format --check src/
     
-    - name: Run type checking
+    - name: Run type checking with MyPy
       run: |
         uv run mypy src/
 
