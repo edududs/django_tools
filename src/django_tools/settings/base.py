@@ -175,37 +175,6 @@ class TemplateSettings(BaseModel):
         ]
 
 
-class SecuritySettings(BaseModel):
-    """Security configuration settings."""
-
-    secret_key: str = Field(default="django-insecure")
-    debug: bool = Field(default=True)
-    allowed_hosts_raw: str | list[str] = Field(
-        default=["*"],
-        alias="ALLOWED_HOSTS",
-    )
-
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def allowed_hosts(self) -> list[str]:
-        """Interpreta ALLOWED_HOSTS de string para lista."""
-        if not self.allowed_hosts_raw or str(self.allowed_hosts_raw).strip() == "":
-            return ["*"]
-
-        text = str(self.allowed_hosts_raw).strip()
-
-        # Tenta primeiro interpretar como array JSON
-        if text.startswith("[") and text.endswith("]"):
-            with suppress(Exception):
-                data = json.loads(text)
-                if isinstance(data, list):
-                    return [str(x).strip() for x in data]
-
-        # Fallback para parsing CSV
-        hosts = [h.strip() for h in text.split(",") if h.strip()]
-        return hosts or ["*"]
-
-
 class InternationalizationSettings(BaseModel):
     """Internationalization configuration settings."""
 
@@ -219,7 +188,7 @@ class DjangoSettings(BaseSettings):
     """Main Django settings using Pydantic v2."""
 
     def __init__(self, *args, **kwargs) -> None:
-        env_file = kwargs.pop("env_file")
+        env_file = kwargs.pop("env_file", None)
         if env_file:
             config = SettingsConfigDict(
                 env_file=env_file,
@@ -229,7 +198,7 @@ class DjangoSettings(BaseSettings):
             )
             path_env = str(Path(env_file).parent)
         else:
-            path_env = str(Path(kwargs.pop("env_dir") or (args[0] if args else ".")))
+            path_env = str(Path(kwargs.pop("env_dir", None) or (args[0] if args else ".")))
             config = SettingsConfigDict(
                 env_file=f"{path_env}/.env",
                 env_file_encoding="utf-8",
@@ -241,12 +210,19 @@ class DjangoSettings(BaseSettings):
         super().__init__()
 
     # Configurações organizadas em schemas
-    security: SecuritySettings = Field(default_factory=SecuritySettings)
     database: DatabaseSettings = Field(default_factory=DatabaseSettings)
     celery: CelerySettings = Field(default_factory=CelerySettings)
     redis: RedisSettings = Field(default_factory=RedisSettings)
     template: TemplateSettings = Field(default_factory=TemplateSettings)
     internationalization: InternationalizationSettings = Field(default_factory=InternationalizationSettings)
+
+    # Configurações de segurança diretas
+    secret_key: str = Field(default="django-insecure")
+    debug: bool = Field(default=True)
+    allowed_hosts_raw: str | list[str] = Field(
+        default=["*"],
+        alias="ALLOWED_HOSTS",
+    )
 
     # Configurações de aplicação
     @property
@@ -281,21 +257,23 @@ class DjangoSettings(BaseSettings):
     # Propriedades computadas que delegam para os schemas
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def secret_key(self) -> str:
-        """Chave secreta do Django."""
-        return self.security.secret_key
+    def allowed_hosts(self) -> list[str] | str | Any:
+        """Interpreta ALLOWED_HOSTS de string para lista."""
+        if not self.allowed_hosts_raw or str(self.allowed_hosts_raw).strip() == "":
+            return ["*"]
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def debug(self) -> bool:
-        """Modo debug do Django."""
-        return self.security.debug
+        text = str(self.allowed_hosts_raw).strip()
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def allowed_hosts(self) -> list[str]:
-        """Hosts permitidos."""
-        return self.security.allowed_hosts
+        # Tenta primeiro interpretar como array JSON
+        if text.startswith("[") and text.endswith("]"):
+            with suppress(Exception):
+                data = json.loads(text)
+                if isinstance(data, list):
+                    return [str(x).strip() for x in data]
+
+        # Fallback para parsing CSV
+        hosts = [h.strip() for h in text.split(",") if h.strip()]
+        return hosts or ["*"]
 
     @computed_field  # type: ignore[prop-decorator]
     @property
