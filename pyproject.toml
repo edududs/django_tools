@@ -1,6 +1,6 @@
 [project]
 name = "django_tools"
-version = "0.1.0"
+version = "0.1.1"
 description = "Configurações Django padronizadas para APIs"
 readme = "README.md"
 authors = [
@@ -13,6 +13,18 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "types-redis>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/edududs/django_tools"
+Repository = "https://github.com/edududs/django_tools"
+Issues = "https://github.com/edududs/django_tools/issues"
 
 [build-system]
 requires = ["uv_build>=0.8.15,<0.9.0"]
