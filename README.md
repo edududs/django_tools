@@ -11,7 +11,7 @@ Coleção em evolução de utilitários que padronizam configurações de projet
 
 ## 🚧 Estado do projeto
 
-- Versão inicial (`0.1.0`) ainda em construção.
+- Versão inicial (`0.1.x`) ainda em construção.
 - API sujeita a alterações sem aviso prévio.
 - Documentação tende a crescer conforme novas implementações.
 
