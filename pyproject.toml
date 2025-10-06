@@ -1,6 +1,6 @@
 [project]
 name = "django_tools"
-version = "0.2.3"
+version = "0.2.4"
 description = "Configurações Django padronizadas para APIs"
 readme = "README.md"
 authors = [

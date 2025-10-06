@@ -84,7 +84,13 @@ class DjangoSettings(BaseSettings):
 
     # ==================================================================================
     # DATABASE SETTINGS
+    # Supports complete URL OR separate variables (URL takes priority)
     # ==================================================================================
+    database_url: str | None = Field(
+        default=None,
+        alias="DATABASE_URL",
+        description="Complete database URL (e.g., postgresql://user:pass@host:port/db)",
+    )
     db_engine: str = Field(
         default="django.db.backends.sqlite3",
         description="Database engine",
@@ -312,10 +318,54 @@ class DjangoSettings(BaseSettings):
     @computed_field  # type: ignore[prop-decorator]
     @property
     def databases(self) -> dict[str, dict[str, Any]]:
-        """Database configuration in Django format."""
+        """Database configuration in Django format.
+
+        Priority: DATABASE_URL > individual database fields.
+        """
+        if self.database_url:
+            return {"default": self._parse_database_url()}
+        return {"default": self._build_database_config()}
+
+    def _parse_database_url(self) -> dict[str, Any]:
+        """Parse DATABASE_URL into Django database configuration."""
+        parsed = urlparse(self.database_url)
+        scheme = str(parsed.scheme).lower()
+
+        # Map scheme to Django engine
+        engine_map = {
+            "postgresql": "django.db.backends.postgresql",
+            "postgres": "django.db.backends.postgresql",
+            "mysql": "django.db.backends.mysql",
+            "sqlite": "django.db.backends.sqlite3",
+        }
+        engine = engine_map.get(scheme, f"django.db.backends.{scheme}")
+
+        db_config: dict[str, Any] = {"ENGINE": engine}
+
+        if scheme == "sqlite":
+            db_name = str(parsed.path).lstrip("/") if parsed.path else "db.sqlite3"
+            db_config["NAME"] = str(
+                Path(self.__class__.path_env) / db_name  # type: ignore[attr-defined]
+            )
+        else:
+            # PostgreSQL, MySQL, etc.
+            if parsed.path:
+                db_config["NAME"] = str(parsed.path).lstrip("/")
+            if parsed.username:
+                db_config["USER"] = str(parsed.username)
+            if parsed.password:
+                db_config["PASSWORD"] = str(parsed.password)
+            if parsed.hostname:
+                db_config["HOST"] = str(parsed.hostname)
+            if parsed.port:
+                db_config["PORT"] = parsed.port
+
+        return db_config
+
+    def _build_database_config(self) -> dict[str, Any]:
+        """Build database configuration from individual fields."""
         db_config: dict[str, Any] = {"ENGINE": self.db_engine}
 
-        # SQLite
         if self.db_engine == "django.db.backends.sqlite3":
             db_config["NAME"] = str(
                 Path(self.__class__.path_env) / self.db_name  # type: ignore[attr-defined]
@@ -333,7 +383,7 @@ class DjangoSettings(BaseSettings):
             if self.db_port:
                 db_config["PORT"] = self.db_port
 
-        return {"default": db_config}
+        return db_config
 
     # ==================================================================================
     # COMPUTED FIELDS - BROKER

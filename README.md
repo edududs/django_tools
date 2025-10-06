@@ -86,7 +86,10 @@ logging_config = settings.default_logging
 ### Basic .env File
 
 ```bash
-# Database Configuration
+# Database Configuration (Option 1: Complete URL)
+DATABASE_URL=postgresql://myuser:mypassword@localhost:5432/myapp_db
+
+# Database Configuration (Option 2: Separate Variables)
 DB_ENGINE=django.db.backends.postgresql
 DB_NAME=myapp_db
 DB_USER=myuser
@@ -131,7 +134,10 @@ TIME_ZONE=UTC
 ### Production .env File Example
 
 ```bash
-# Production Database
+# Production Database (Option 1: Complete URL)
+DATABASE_URL=postgresql://prod_user:secure_production_password@db.example.com:5432/production_db
+
+# Production Database (Option 2: Separate Variables)
 DB_ENGINE=django.db.backends.postgresql
 DB_NAME=production_db
 DB_USER=prod_user
@@ -160,6 +166,23 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD=500
 API_NAME=production_api
 LANGUAGE_CODE=pt-br
 TIME_ZONE=America/Sao_Paulo
+```
+
+### Database Type Auto-Detection
+
+The system automatically detects database types from DATABASE_URL:
+
+```bash
+# PostgreSQL (detected from postgresql:// or postgres://)
+DATABASE_URL=postgresql://user:pass@db.example.com:5432/mydb
+# OR
+DATABASE_URL=postgres://user:pass@db.example.com:5432/mydb
+
+# MySQL (detected from mysql://)
+DATABASE_URL=mysql://user:pass@db.example.com:3306/mydb
+
+# SQLite (detected from sqlite://)
+DATABASE_URL=sqlite:///path/to/database.db
 ```
 
 ### Broker Type Auto-Detection
