@@ -281,6 +281,7 @@ class DjangoSettings(BaseSettings):
         default="django.db.models.BigAutoField",
         description="Default auto increment field",
     )
+    api_group_base_url: str = Field(default="", alias="API_GROUP_BASE_URL")
 
     # ==================================================================================
     # COMPUTED FIELDS - ALLOWED_HOSTS
