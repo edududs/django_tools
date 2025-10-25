@@ -15,7 +15,7 @@ help:
 	@echo "  dry-push          - Run version, check, workflow, and clean in sequence"
 	@echo ""
 	@echo "Git Commands:"
-	@echo "  push              - Run full validation and push if everything passes"
+	@echo "  push              - Run full validation and push committed changes (allows uncommitted files)"
 	@echo "  commit-push       - Add all changes, commit with message, and push"
 	@echo ""
 	@echo "Maintenance:"
@@ -60,14 +60,6 @@ workflow-version:
 dry-push: workflow-version workflow-check workflow-run clean
 
 push: workflow-check workflow-run
-	@echo ""
-	@echo "🔍 Checking git status..."
-	@if [ -n "$$(git status --porcelain)" ]; then \
-		echo "❌ You have uncommitted changes. Please commit them first."; \
-		echo "   Use: git add . && git commit -m 'your message'"; \
-		exit 1; \
-	fi
-	@echo "✅ No uncommitted changes found."
 	@echo ""
 	@echo "🔍 Checking if there are commits to push..."
 	@if ! git rev-list --count HEAD ^origin/$$(git branch --show-current) > /dev/null 2>&1 || [ $$(git rev-list --count HEAD ^origin/$$(git branch --show-current)) -eq 0 ]; then \
