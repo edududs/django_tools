@@ -1,7 +1,7 @@
 [project]
 name = "django_tools"
-version = "0.2.4"
-description = "Configurações Django padronizadas para APIs"
+version = "0.3.1"
+description = "Django plugin with Pydantic settings, Celery integration, and Dependency Injection"
 readme = "README.md"
 authors = [
     { name = "Eduardo Jesus", email = "dudulj15@gmail.com" }
@@ -12,10 +12,10 @@ dependencies = [
     "django>=5.2.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
-    "ruff",
-    "redis",
-    "types-redis>=4.0.0",
+    "redis>=5.0.0",
+    "dependency-injector>=4.48.2",
 ]
+
 
 
 [project.urls]
@@ -38,133 +38,16 @@ line-length = 120
 fix = true
 show-fixes = true
 
-[tool.ruff.lint]
-select = [
-    "E",     # pycodestyle errors
-    "F",     # pyflakes
-    "W",     # pycodestyle warnings
-    "I",     # isort
-    "N",     # pep8-naming
-    "B",     # flake8-bugbear
-    "A",     # flake8-builtins
-    "C4",    # flake8-comprehensions
-    "SIM",   # flake8-simplify
-    "ERA",   # eradicate
-    "UP",    # pyupgrade
-    "S",     # flake8-bandit
-    "T20",   # flake8-print
-    "RET",   # flake8-return
-    "SLF",   # flake8-self
-    "ARG",   # flake8-unused-arguments
-    "PTH",   # flake8-use-pathlib
-    "PL",    # pylint
-    "RUF",   # ruff-specific rules
-    "COM",   # flake8-commas
-    "DTZ",   # flake8-datetimez
-    "C90",   # mccabe
-    "D",     # pydocstyle
-    "ICN",   # flake8-import-conventions
-    "ISC",   # flake8-implicit-str-concat
-    "PIE",   # flake8-pie
-    "PT",    # flake8-pytest-style
-    "Q",     # flake8-quotes
-    "RSE",   # flake8-raise
-    "TID",   # flake8-tidy-imports
-    "TCH",   # flake8-todos
-    "YTT",   # flake8-2020
-    "BLE",   # flake8-blind-except
-    "FBT",   # flake8-boolean-trap
-    "DJ",    # flake8-django
-    "EM",    # flake8-errmsg
-    "EXE",   # flake8-executable
-    "FA",    # flake8-future-annotations
-    "G",     # flake8-logging-format
-    "INP",   # flake8-no-pep420
-    "T10",   # flake8-debugger
-    "PYI",   # flake8-pyi
-    "SLOT",  # flake8-slots
-    "INT",   # flake8-gettext
-    "PD",    # pandas-vet
-    "PGH",   # pygrep-hooks
-    "TRY",   # tryceratops
-    "FLY",   # flynt
-    "NPY",   # numpy
-    "AIR",   # flake8-airflow
-    "PERF",  # perflint
-    "FURB",  # refurb
-    "LOG",   # flake8-logging
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "ipython>=9.6.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.14.0",
+    "ruff>=0.8.0",
+    "types-redis>=4.0.0",
 ]
+    
 
-ignore = [
-    "E501",     # line too long
-    "D100",     # Missing docstring in public module
-    "D101",     # Missing docstring in public class
-    "D102",     # Missing docstring in public method
-    "D103",     # Missing docstring in public function
-    "D104",     # Missing docstring in public package
-    "D105",     # Missing docstring in magic method
-    "D106",     # Missing docstring in public nested class
-    "D107",     # Missing docstring in __init__
-    "UP006",    # Use list instead of list()
-    "UP035",    # Use X instead of Y
-    "PLR2004",  # Magic constant
-    "PLR6301",  # Method could be a function
-    "PLC0415",  # Import aliased to import_module
-    "D401",     # First line should be imperative
-    "PLR0904",  # Too many public methods
-    "S608",     # SQL query building
-    "N806",     # Variable in function should be lowercase
-    "B905",     # Zip without strict=True
-    "C901",     # Too complex
-    "PLR0913",  # Too many arguments
-    "S101",     # Use of assert
-    "FBT001",   # Boolean default value
-    "FBT002",   # Boolean positional argument
-    "FBT003",   # Boolean positional argument default
-    "A003",     # Shadowing built-ins
-    "COM812",   # Missing trailing comma
-    "ISC001",   # Single-line implicit string concatenation
-    "Q000",     # Unnecessary quote
-    "Q001",     # Single/Double quote
-    "Q002",     # Unnecessary quote around string literal
-    "Q003",     # Avoid using single quotes for module level docstrings
-    "ERA001",   # Commented-out code
-    "PD",       # pandas-vet
-    "NPY",      # numpy
-    "AIR",      # flake8-airflow
-    "G004",     # Use f-string for logging
-    "T20",      # print
-    "S603",     # subprocess.call with shell=True
-    "S607",     # subprocess.call with executable
-    "TRY003",   # Avoid bare except
-    "PLR0912",  # Too many branches
-    "PLR0915",  # Too many statements
-    "TID252",   # Banned imports
-    "PLC",      # pylint
-    "BLE001",   # Blind exception
-    "PTH123",   # Use open instead of Path.open
-    "PLR0917",  # Too many arguments on a call
-    "T201",     # Print statement
-    "UP045",    # Use dict.get instead of if/else
-    "RUF029",   # Prefer f-string
-    "EM101",    # Error message must be a string
-    "B008",     # Function call as default argument
-    "TRY300",   # Avoid using 'raise from' on exceptions
-    "TRY301",   # Avoid using 'raise from' on exceptions
-    "RUF012",   # Class-level mutable default
-    "S311",     # Use of insecure function random.choice
-]
 
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["django_tools"]
-
-[tool.ruff.lint.mccabe]
-max-complexity = 10
-
-[tool.ruff.lint.pylint]
-max-args = 8
-max-branches = 12
-max-statements = 50
