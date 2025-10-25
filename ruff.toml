@@ -120,6 +120,84 @@ ignore = [
 # Configurações específicas por arquivo
 [lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "F405"]
+# Arquivos de teste - ignorar erros comuns de segurança e debug
+"**/test_*.py" = [
+    "S105",      # Possible hardcoded password (senhas em testes são aceitáveis)
+    "S101",      # Use of assert (assert é comum em testes)
+    "T100",      # Import for debugger found (debuggers em testes são aceitáveis)
+    "T201",      # Print statement (prints em testes são aceitáveis)
+    "T20",       # Print statements (prints em testes são aceitáveis)
+    "PLR2004",   # Magic constant (constantes mágicas em testes são aceitáveis)
+    "PLR0913",   # Too many arguments (testes podem ter muitos argumentos)
+    "PLR0912",   # Too many branches (testes podem ter muitos branches)
+    "PLR0915",   # Too many statements (testes podem ter muitas statements)
+    "PLR0917",   # Too many arguments on a call (testes podem ter muitas chamadas)
+    "C901",      # Too complex (testes podem ser complexos)
+    "B008",      # Function call as default argument (comum em fixtures)
+    "FBT001",    # Boolean default value (comum em testes)
+    "FBT002",    # Boolean positional argument (comum em testes)
+    "FBT003",    # Boolean positional argument default (comum em testes)
+    "A003",      # Shadowing built-ins (comum em testes)
+    "COM812",    # Missing trailing comma (não crítico em testes)
+    "ISC001",    # Single-line implicit string concatenation (aceitável em testes)
+    "Q000",      # Unnecessary quote (não crítico em testes)
+    "Q001",      # Single/Double quote (não crítico em testes)
+    "Q002",      # Unnecessary quote around string literal (não crítico em testes)
+    "Q003",      # Avoid using single quotes for module level docstrings (não crítico em testes)
+    "ERA001",    # Commented-out code (comum em testes para documentação)
+    "G004",      # Use f-string for logging (não crítico em testes)
+    "TRY003",    # Avoid bare except (comum em testes para capturar qualquer exceção)
+    "TID252",    # Banned imports (imports específicos de teste são aceitáveis)
+    "BLE001",    # Blind exception (comum em testes)
+    "PTH123",    # Use open instead of Path.open (não crítico em testes)
+    "UP045",     # Use dict.get instead of if/else (não crítico em testes)
+    "RUF029",    # Prefer f-string (não crítico em testes)
+    "EM101",     # Error message must be a string (não crítico em testes)
+    "TRY300",    # Avoid using 'raise from' on exceptions (comum em testes)
+    "TRY301",    # Avoid using 'raise from' on exceptions (comum em testes)
+    "RUF012",    # Class-level mutable default (comum em fixtures)
+    "S311",      # Use of insecure function random.choice (aceitável em testes)
+    "B904",      # Use raise from to specify exception cause (comum em testes)
+]
+# Arquivos de configuração de teste
+"**/conftest.py" = [
+    "S105",      # Possible hardcoded password
+    "S101",      # Use of assert
+    "T100",      # Import for debugger found
+    "T201",      # Print statement
+    "T20",       # Print statements
+    "PLR2004",   # Magic constant
+    "PLR0913",   # Too many arguments
+    "PLR0912",   # Too many branches
+    "PLR0915",   # Too many statements
+    "PLR0917",   # Too many arguments on a call
+    "C901",      # Too complex
+    "B008",      # Function call as default argument
+    "FBT001",    # Boolean default value
+    "FBT002",    # Boolean positional argument
+    "FBT003",    # Boolean positional argument default
+    "A003",      # Shadowing built-ins
+    "COM812",    # Missing trailing comma
+    "ISC001",    # Single-line implicit string concatenation
+    "Q000",      # Unnecessary quote
+    "Q001",      # Single/Double quote
+    "Q002",      # Unnecessary quote around string literal
+    "Q003",      # Avoid using single quotes for module level docstrings
+    "ERA001",    # Commented-out code
+    "G004",      # Use f-string for logging
+    "TRY003",    # Avoid bare except
+    "TID252",    # Banned imports
+    "BLE001",    # Blind exception
+    "PTH123",    # Use open instead of Path.open
+    "UP045",     # Use dict.get instead of if/else
+    "RUF029",    # Prefer f-string
+    "EM101",     # Error message must be a string
+    "TRY300",    # Avoid using 'raise from' on exceptions
+    "TRY301",    # Avoid using 'raise from' on exceptions
+    "RUF012",    # Class-level mutable default
+    "S311",      # Use of insecure function random.choice
+    "B904",      # Use raise from to specify exception cause
+]
 
 # Configurações de formatação
 [format]
