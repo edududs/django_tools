@@ -1,2 +1,129 @@
-[per-file-ignores]
-"__init__.py"= ["F401", "F403", "F405"]
+# Configuração do Ruff baseada nas preferências do VS Code
+line-length = 100
+
+# Regras de linting selecionadas
+[lint]
+select = [
+    "E",      # Erros (pep8, Erros de sintaxe)
+    "F",      # Flake8 (Erros lógicos, Flake8-bugbear, etc.)
+    "W",      # Warnings (pep8, Avisos)
+    "I",      # isort (Organização de imports)
+    "N",      # Naming (Convenções de nomenclatura - PEP8)
+    "B",      # Bugbear (Avisos de prováveis bugs ou design ruim)
+    "A",      # Builtins (Conflitos com built-ins do Python)
+    "C4",     # Comprehensions (Sugere list/dict/set comprehensions)
+    "SIM",    # Simplifiable (Sugestões de simplificação de código)
+    "ERA",    # Eradicate (Comentários de código desnecessários/morto)
+    "UP",     # Modernize (Sugestões de sintaxe moderna)
+    "S",      # Bandit (Regras de segurança)
+    "RET",    # Return (Retorno de código)
+    "SLF",    # Self (Regras de primeiro argumento de método/função)
+    "ARG",    # Arguments (Argumentos não utilizados)
+    "PTH",    # Pathlib (Sugere o uso de 'pathlib')
+    "PL",     # Pylint (Regras gerais do Pylint)
+    "RUF",    # Ruff (Regras próprias do Ruff)
+    "COM",    # Comments (Regras para comentários)
+    "DTZ",    # DateTime (Regras de fuso horário)
+    "C90",    # Complexity (Complexidade Ciclomática)
+    "D",      # Docstrings (Regras de docstrings)
+    "ICN",    # Import Conventions (Convenções de importação)
+    "ISC",    # Implicit String Concatenation (Concatenação implícita de strings)
+    "PIE",    # Pyupgrade-like (Otimização de sintaxe Python)
+    "PT",     # Pytest (Regras para testes Pytest)
+    "Q",      # Quote (Consistência de aspas)
+    "RSE",    # Raise (Boas práticas ao levantar exceções)
+    "TID",    # Tidy (Regras de organização)
+    "YTT",    # Yield (Regras para funções geradoras)
+    "BLE",    # Blind Exceptions (Exceções genéricas)
+    "FBT",    # Boolean Trailing (Argumentos booleanos no final)
+    "DJ",     # Django (Regras específicas para Django)
+    "EM",     # Error Message (Melhores mensagens de erro)
+    "EXE",    # Executable (Verifica permissões de execução)
+    "FA",     # F-String (Sugere o uso de f-strings)
+    "G",      # Logging (Boas práticas de logging)
+    "INP",    # Implicit Namespace Package (Regras de pacotes de namespace)
+    "T10",    # Debug (Pontos de debug em código)
+    "PYI",    # Pyright (Regras de tipagem)
+    "SLOT",   # Slots (Sugere o uso de __slots__)
+    "INT",    # Internationalization (i18n)
+    "PD",     # Pandas (Regras específicas para Pandas)
+    "PGH",    # Pygame Helpers (Regras para Pygame)
+    "TRY",    # Try (Melhores práticas de try-except)
+    "FLY",    # Flynt (Uso de f-strings)
+    "NPY",    # Numpy (Regras específicas para Numpy)
+    "AIR",    # Airflow (Regras específicas para Airflow)
+    "PERF",   # Perflint (Sugestões de performance)
+    "FURB",   # Furb (Autofix de código)
+    "LOG",    # Logging (Regras adicionais de logging)
+]
+
+# Regras ignoradas
+ignore = [
+    "E501",      # Line too long (já configurado com line-length)
+    "D100",      # Missing docstring in public module
+    "D101",      # Missing docstring in public class
+    "D102",      # Missing docstring in public method
+    "D103",      # Missing docstring in public function
+    "D104",      # Missing docstring in public package
+    "D105",      # Missing docstring in magic method
+    "D106",      # Missing docstring in public nested class
+    "D107",      # Missing docstring in __init__
+    "D205",      # 1 blank line required between summary line and description
+    "D401",      # First line should be imperative
+    "UP006",     # Use list instead of list()
+    "UP035",     # Use X instead of Y
+    "PLR2004",   # Magic constant
+    "PLR6301",   # Method could be a function
+    "PLC0415",   # Import aliased to import_module
+    "PLR0904",   # Too many public methods
+    "S608",      # SQL query building (SQL injection risk)
+    "N806",      # Variable in function should be lowercase
+    "B905",      # Zip without strict=True
+    "C901",      # Too complex (Cyclomatic Complexity)
+    "PLR0913",   # Too many arguments
+    "S101",      # Use of assert
+    "FBT001",    # Boolean default value
+    "FBT002",    # Boolean positional argument
+    "FBT003",    # Boolean positional argument default
+    "A003",      # Shadowing built-ins
+    "COM812",    # Missing trailing comma
+    "ISC001",    # Single-line implicit string concatenation
+    "Q000",      # Unnecessary quote
+    "Q001",      # Single/Double quote
+    "Q002",      # Unnecessary quote around string literal
+    "Q003",      # Avoid using single quotes for module level docstrings
+    "ERA001",    # Commented-out code
+    "G004",      # Use f-string for logging
+    "T20",       # Print statements
+    "S603",      # subprocess.call with shell=True
+    "S607",      # subprocess.call with executable
+    "TRY003",    # Avoid bare except
+    "PLR0912",   # Too many branches
+    "PLR0915",   # Too many statements
+    "TID252",    # Banned imports
+    "PLC",       # Pylint warnings
+    "BLE001",    # Blind exception
+    "PTH123",    # Use open instead of Path.open
+    "PLR0917",   # Too many arguments on a call
+    "T201",      # Print statement
+    "UP045",     # Use dict.get instead of if/else
+    "RUF029",    # Prefer f-string
+    "EM101",     # Error message must be a string
+    "B008",      # Function call as default argument
+    "TRY300",    # Avoid using 'raise from' on exceptions
+    "TRY301",    # Avoid using 'raise from' on exceptions
+    "RUF012",    # Class-level mutable default
+    "S311",      # Use of insecure function random.choice
+    "B904",      # Use raise from to specify exception cause
+]
+
+# Configurações específicas por arquivo
+[lint.per-file-ignores]
+"__init__.py" = ["F401", "F403", "F405"]
+
+# Configurações de formatação
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
