@@ -8,7 +8,7 @@ from .infra import DatabaseSettings
 
 
 class DjangoSettingsBaseModel(BaseSettings):
-    """Django settings with DJANGO_ prefix"""
+    """Django settings with DJANGO_ prefix."""
 
     model_config = SettingsConfigDict(
         extra="ignore",

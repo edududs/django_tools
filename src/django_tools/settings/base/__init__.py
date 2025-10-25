@@ -16,12 +16,13 @@ class Settings:
         self.redis = RedisSettings(_env_file=env_file)
 
     def model_dump(self, *args, **kwargs) -> dict[str, Any]:
+        by_alias = kwargs.pop("by_alias", True)
         return {
-            **self.dj.model_dump(by_alias=kwargs.pop("by_alias", True), *args, **kwargs),
-            **self.celery.model_dump(by_alias=kwargs.pop("by_alias", True), *args, **kwargs),
-            **self.db.model_dump(by_alias=kwargs.pop("by_alias", True), *args, **kwargs),
-            **self.rabbit.model_dump(by_alias=kwargs.pop("by_alias", True), *args, **kwargs),
-            **self.redis.model_dump(by_alias=kwargs.pop("by_alias", True), *args, **kwargs),
+            **self.dj.model_dump(*args, by_alias=by_alias, **kwargs),
+            **self.celery.model_dump(*args, by_alias=by_alias, **kwargs),
+            **self.db.model_dump(*args, by_alias=by_alias, **kwargs),
+            **self.rabbit.model_dump(*args, by_alias=by_alias, **kwargs),
+            **self.redis.model_dump(*args, by_alias=by_alias, **kwargs),
         }
 
     def __str__(self) -> str:
