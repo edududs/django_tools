@@ -5,6 +5,7 @@ ruff-fix:
 	uv run ruff check src/ --fix
 
 ruff-check:
+	uv run ruff format src/ --check
 	uv run ruff check src/
 
 ruff-format:

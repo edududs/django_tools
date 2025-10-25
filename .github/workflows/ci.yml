@@ -3,12 +3,11 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -35,18 +34,27 @@ jobs:
       run: |
         uv run ruff --version
     
-    - name: Run linting with Ruff
+    - name: Run Ruff linting and auto-fix
       run: |
-        uv run ruff check src/
-        uv run ruff format --check src/
+        uv run ruff check src/ --fix
+        uv run ruff format src/
+    
+    - name: Run tests
+      run: |
+        uv run pytest src/ -v --cov=src --cov-report=term-missing
 
-  build:
-    needs: lint
+  release:
+    needs: test
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
     
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -55,34 +63,58 @@ jobs:
     
     - name: Install uv
       uses: astral-sh/setup-uv@v3
+      with:
+        version: "latest"
+    
+    - name: Get current version
+      id: get_version
+      run: |
+        CURRENT_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+        echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Bump version
+      id: bump_version
+      run: |
+        CURRENT_VERSION="${{ steps.get_version.outputs.current_version }}"
+        IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
+        MAJOR="${VERSION_PARTS[0]}"
+        MINOR="${VERSION_PARTS[1]}"
+        PATCH="${VERSION_PARTS[2]}"
+        
+        # Increment patch version
+        NEW_PATCH=$((PATCH + 1))
+        NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+        
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        echo "New version: $NEW_VERSION"
+    
+    - name: Update pyproject.toml
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+        sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" pyproject.toml
+        
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add pyproject.toml
+        git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+        git push
+    
+    - name: Create and push tag
+      run: |
+        NEW_VERSION="${{ steps.bump_version.outputs.new_version }}"
+        git tag "v$NEW_VERSION"
+        git push origin "v$NEW_VERSION"
     
     - name: Build package
       run: |
         uv build
     
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: dist
-        path: dist/
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: dist
-        path: dist/
-    
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
+        tag_name: v${{ steps.bump_version.outputs.new_version }}
+        name: Release v${{ steps.bump_version.outputs.new_version }}
         files: dist/*
         generate_release_notes: true
       env:
