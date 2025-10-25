@@ -1,6 +1,6 @@
 [project]
 name = "django_tools"
-version = "0.3.2"
+version = "0.3.3"
 description = "Django plugin with Pydantic settings, Celery integration, and Dependency Injection"
 readme = "README.md"
 authors = [
