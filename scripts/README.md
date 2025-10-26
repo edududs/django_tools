@@ -1,199 +1,403 @@
-# Workflow Dry Run Script
+# Workflow Automation System
 
-Script to simulate your CI/CD workflow locally before pushing to GitHub.
+Sistema modular de automação para qualidade de código e gerenciamento de releases.
 
-## Installation
+## Visão Geral
 
-All dependencies are included in the `pyproject.toml`:
+O sistema de workflow é sua **central de comando** para garantir qualidade de código antes de fazer push. Ele integra validações (Ruff, Pyright, testes) com operações Git (push, tags, releases) de forma modular e extensível.
+
+## Instalação
+
+Todas as dependências estão incluídas no `pyproject.toml`:
 
 ```bash
 uv sync --dev
 ```
 
-## Usage
+## Arquitetura
 
-### Via Makefile (Recommended)
+```
+scripts/workflow/
+├── cli.py              # Interface CLI principal
+├── core/               # Componentes centrais
+│   ├── models.py       # CommandResult, JobResult
+│   └── runner.py       # WorkflowRunner
+├── commands/           # Comandos modulares
+│   ├── check.py        # Validações (ruff, pyright, tests)
+│   ├── push.py         # Operações de push
+│   ├── tag.py          # Gerenciamento de tags
+│   └── version.py      # Informações de versão
+└── utils/              # Utilitários
+    └── git.py          # Funções Git
+```
+
+## Uso via Makefile (Recomendado)
+
+### Comandos de Validação
 
 ```bash
-# List all available commands
-make help
+# Verificação rápida (apenas Ruff)
+make check
 
-# Quick check (linting + formatting)
-make workflow-check
+# Verificação rápida com auto-fix
+make check-fix
 
-# Full workflow (tests + release dry-run)
-make workflow-run
+# Verificação completa (Ruff + Pyright + Testes)
+make full
 
-# Show version information
-make workflow-version
-
-# Git workflow commands
-make push              # Run validations and push (if commits exist)
-make commit-push       # Add, commit, and push with validations
+# Verificação completa com auto-fix
+make full-fix
 ```
 
-### Via Direct Python
+### Comandos de Push
 
 ```bash
-# Full workflow (dry-run)
-uv run python scripts/workflow_dryrun.py run
+# Push com validação automática
+make push
 
-# Quick check only
-uv run python scripts/workflow_dryrun.py check
+# Push forçado (sem validação - use com cuidado!)
+make push-force
 
-# Version information
-uv run python scripts/workflow_dryrun.py version
-
-# Show help
-uv run python scripts/workflow_dryrun.py --help
+# Push apenas tags
+make push-tags
 ```
 
-## Output
-
-The script provides:
-
-1. **Real-time execution**: Shows each command as it's run
-2. **Summary table**: Job status and success rate
-3. **Detailed report**: All executed commands with duration
-4. **Test coverage**: Full coverage report
-
-### Example Output
-
-```
-╭─────────────────────────────────────╮
-│ Workflow Dry Run - CI/CD Simulation │
-╰─ Simulating GitHub Actions locally ─╯
-
-╭───────────╮
-│ Job: Test │
-╰───────────╯
-
-▶ Verify Ruff installation
-✓ Verify Ruff installation (0.03s)
-
-▶ Run Ruff linting and auto-fix
-✓ Run Ruff linting and auto-fix (0.04s)
-
-...
-
-               Workflow Execution Summary               
-┏━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━┓
-┃ Job  ┃  Status  ┃ Duration ┃ Commands ┃ Success Rate ┃
-┡━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━┩
-│ TEST │ ✓ PASSED │    1.09s │   4/4    │              │
-└──────┴──────────┴──────────┴──────────┴──────────────┘
-
-╭────────────────────────────────────╮
-│ ✓ All jobs completed successfully! │
-│ Total duration: 1.09s              │
-╰────────────────────────────────────╯
-```
-
-## Recommended Workflow
-
-### Option 1: Manual Git Commands
-
-1. **Make your changes and commit them:**
-
-   ```bash
-   git add .
-   git commit -m "your commit message"
-   ```
-
-2. **Before pushing:**
-
-   ```bash
-   make push
-   ```
-
-### Option 2: Automated Git Workflow
-
-1. **Make your changes and use the automated command:**
-
-   ```bash
-   make commit-push
-   ```
-
-   This will:
-   - Check for changes
-   - Ask for commit message
-   - Add all changes
-   - Commit with your message
-   - Run all validations
-   - Push if everything passes
-
-### Option 3: Quick Validation Only
+### Comandos de Release
 
 ```bash
-# Before committing (quick check)
-make workflow-check
+# Criar tag de release (valida antes)
+make release
 
-# Before pushing (full validation)
-make workflow-run
+# Criar tag e fazer push imediatamente
+make release-push
 ```
 
-### Advanced Options (Direct Python)
+### Comandos de Tag
 
 ```bash
-# Skip the test job
-uv run python scripts/workflow_dryrun.py run --skip-tests
+# Listar tags recentes
+make tag-list
 
-# Skip the release job
-uv run python scripts/workflow_dryrun.py run --skip-release
+# Criar tag manualmente
+make tag-create
 
-# Actually execute release (not recommended, use for testing only)
-uv run python scripts/workflow_dryrun.py run --no-dry-run
+# Criar tag e fazer push
+make tag-create-push
 ```
 
-## What the Script Checks
+### Comandos Utilitários
 
-### Job: Test
+```bash
+# Mostrar versão atual e próximas versões
+make version
 
-- ✅ Ruff installation
-- ✅ Linting with auto-fix
-- ✅ Code formatting
-- ✅ Tests with coverage
+# Deploy completo (validação + push tudo)
+make deploy
+```
 
-### Job: Release (Dry Run)
+## Uso via CLI Direto
 
-- ✅ Reads the current version
-- ✅ Calculates the new version
-- ✅ Builds the package
-- ⚠️ Does **not** update `pyproject.toml` (dry-run)
-- ⚠️ Does **not** create tags (dry-run)
+### Validações
+
+```bash
+# Apenas Ruff
+uv run python -m scripts.workflow.cli check
+
+# Ruff com auto-fix
+uv run python -m scripts.workflow.cli check --fix
+
+# Adicionar Pyright
+uv run python -m scripts.workflow.cli check --pyright
+
+# Adicionar testes
+uv run python -m scripts.workflow.cli check --tests
+
+# Tudo junto
+uv run python -m scripts.workflow.cli full
+
+# Tudo com auto-fix
+uv run python -m scripts.workflow.cli full --fix
+
+# Pular Pyright
+uv run python -m scripts.workflow.cli full --skip-pyright
+
+# Pular testes
+uv run python -m scripts.workflow.cli full --skip-tests
+```
+
+### Push
+
+```bash
+# Push com validação
+uv run python -m scripts.workflow.cli push
+
+# Push sem validação
+uv run python -m scripts.workflow.cli push --no-validate
+
+# Push forçado
+uv run python -m scripts.workflow.cli push --force
+
+# Push apenas tags
+uv run python -m scripts.workflow.cli push --tags-only
+```
+
+### Release
+
+```bash
+# Criar tag (valida antes)
+uv run python -m scripts.workflow.cli release
+
+# Criar tag e fazer push
+uv run python -m scripts.workflow.cli release --push
+
+# Criar tag sem validação
+uv run python -m scripts.workflow.cli release --no-validate
+```
+
+### Tags
+
+```bash
+# Listar tags
+uv run python -m scripts.workflow.cli tag list
+
+# Listar mais tags
+uv run python -m scripts.workflow.cli tag list --limit 20
+
+# Criar tag
+uv run python -m scripts.workflow.cli tag create
+
+# Criar tag e fazer push
+uv run python -m scripts.workflow.cli tag create --push
+
+# Deletar tag local
+uv run python -m scripts.workflow.cli tag delete --name v1.0.0
+
+# Deletar tag local e remota
+uv run python -m scripts.workflow.cli tag delete --name v1.0.0 --remote
+```
+
+### Versão
+
+```bash
+# Mostrar informações de versão
+uv run python -m scripts.workflow.cli version
+```
+
+### Deploy
+
+```bash
+# Deploy completo (validação + push)
+uv run python -m scripts.workflow.cli deploy
+
+# Deploy sem validação (não recomendado)
+uv run python -m scripts.workflow.cli deploy --skip-validation
+```
+
+## Fluxos de Trabalho Recomendados
+
+### 1. Desenvolvimento Normal
+
+```bash
+# Durante desenvolvimento
+make check-fix          # Valida e corrige Ruff
+
+# Antes de commitar
+make full               # Validação completa
+
+# Após commitar
+make push               # Push com validação
+```
+
+### 2. Release com Tag
+
+```bash
+# 1. Atualizar versão no pyproject.toml manualmente
+vim pyproject.toml      # Alterar version = "X.Y.Z"
+
+# 2. Commitar a mudança de versão
+git add pyproject.toml
+git commit -m "chore: bump version to X.Y.Z"
+
+# 3. Criar tag e fazer push
+make release-push       # Valida, cria tag, e faz push
+```
+
+### 3. Deploy Rápido
+
+```bash
+# Após commitar suas mudanças
+make deploy             # Valida tudo e faz push
+```
+
+### 4. Correção Urgente (Hotfix)
+
+```bash
+# Validação mínima + push
+make check
+make push-force         # Pula validação completa
+```
+
+## O Que Cada Comando Valida
+
+### `check` (Ruff)
+- ✅ Instalação do Ruff
+- ✅ Linting (com ou sem auto-fix)
+- ✅ Formatação (com ou sem auto-fix)
+
+### `full` (Completo)
+- ✅ Ruff (linting + formatação)
+- ✅ Pyright (type checking)
+- ✅ Pytest (testes com coverage)
+
+### `push` (Push com Validação)
+- ✅ Ruff checks
+- ✅ Verifica se há commits para push
+- ✅ Push de commits
+- ✅ Push de tags (se houver)
+
+### `release` (Release com Tag)
+- ✅ Validação completa (Ruff + Pyright + Testes)
+- ✅ Lê versão do pyproject.toml
+- ✅ Cria tag anotada (v{version})
+- ✅ Opcionalmente faz push da tag
+
+### `deploy` (Deploy Completo)
+- ✅ Validação completa
+- ✅ Push de commits
+- ✅ Push de tags
+
+## Diferenças do Sistema Antigo
+
+### Antes (`workflow_dryrun.py`)
+- Monolítico (um arquivo único)
+- Simulava CI/CD localmente
+- Release automático no CI/CD
+
+### Agora (Package `workflow`)
+- **Modular**: Separação clara de responsabilidades
+- **Extensível**: Fácil adicionar novos comandos
+- **Controle local**: Releases manuais via CLI
+- **CI/CD simplificado**: Apenas testes, sem releases
+
+## Integração com CI/CD
+
+O CI/CD agora é **apenas para validação**:
+
+```yaml
+# .github/workflows/ci.yml
+jobs:
+  test:
+    - Run Ruff linting
+    - Run tests
+```
+
+**Releases são feitos localmente** via `make release-push`.
 
 ## Troubleshooting
 
-### Script cannot find pyproject.toml
-
-Make sure you are in the project root directory:
+### Script não encontra pyproject.toml
 
 ```bash
 cd /path/to/django_tools
 ```
 
-### Tests are failing
-
-Run tests manually to view details:
+### Testes falhando
 
 ```bash
 uv run pytest src/ -v
 ```
 
-### Ruff finds errors
-
-Run the fix manually:
+### Ruff encontra erros
 
 ```bash
-uv run ruff check src/ --fix
-uv run ruff format src/
+make check-fix
 ```
 
-## Dependencies
+### Pyright encontra erros
 
-- `typer`: CLI framework
-- `rich`: Rich terminal visualization
-- `pytest`: Test framework
-- `ruff`: Linter and formatter
+```bash
+pyright
+# ou
+make pyright
+```
 
-All dependencies are automatically installed with `uv sync --dev`.
+### Push falha por falta de commits
+
+```bash
+# Verifique se há commits para push
+git status
+git log origin/main..HEAD
+```
+
+### Tag já existe
+
+```bash
+# Delete a tag local
+git tag -d v1.0.0
+
+# Delete a tag remota
+git push origin --delete v1.0.0
+
+# Ou use o comando
+make tag-list
+uv run python -m scripts.workflow.cli tag delete --name v1.0.0 --remote
+```
+
+## Comandos Legacy (Ruff direto)
+
+Ainda disponíveis para compatibilidade:
+
+```bash
+make ruff-fix           # Ruff format + check --fix
+make ruff-check         # Ruff format --check + check
+make ruff-format        # Ruff format --check
+```
+
+**Recomendação**: Use os novos comandos `make check` e `make full`.
+
+## Dependências
+
+- `typer`: Framework CLI
+- `rich`: Visualização rica no terminal
+- `pytest`: Framework de testes
+- `ruff`: Linter e formatador
+- `pyright`: Type checker (opcional)
+
+Todas instaladas automaticamente com `uv sync --dev`.
+
+## Contribuindo
+
+Para adicionar novos comandos:
+
+1. Crie módulo em `scripts/workflow/commands/`
+2. Implemente função `{command}_command(project_root, ...)`
+3. Exponha em `scripts/workflow/commands/__init__.py`
+4. Adicione comando no `cli.py`
+5. Adicione atalho no `Makefile`
+
+Exemplo:
+
+```python
+# scripts/workflow/commands/mycommand.py
+def mycommand_command(project_root: Path) -> bool:
+    runner = WorkflowRunner(project_root)
+    # ... implementação
+    return True
+```
+
+```python
+# scripts/workflow/cli.py
+@app.command()
+def mycommand():
+    """My custom command."""
+    project_root = get_project_root()
+    success = mycommand_command(project_root)
+    if not success:
+        raise typer.Exit(1)
+```
+
+```makefile
+# Makefile
+mycommand:
+	uv run python -m scripts.workflow.cli mycommand
+```

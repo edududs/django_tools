@@ -62,10 +62,7 @@ class RedisSettings(BaseSettings):
                     values["REDIS_DB"] = int(parsed.path.strip("/"))
 
         # Se não tem URL mas tem campos individuais, monta a URL
-        elif any(
-            data_upper.get(key)
-            for key in ["REDIS_HOST", "REDIS_PORT", "REDIS_DB", "REDIS_PASSWORD"]
-        ):
+        elif any(data_upper.get(key) for key in ["REDIS_HOST", "REDIS_PORT", "REDIS_DB", "REDIS_PASSWORD"]):
             host = data_upper.get("REDIS_HOST", "localhost")
             port = data_upper.get("REDIS_PORT", 6379)
             db = data_upper.get("REDIS_DB", 0)

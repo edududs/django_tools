@@ -1,0 +1,91 @@
+{
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.ruff_cache",
+    "**/.mypy_cache",
+    "**/dist",
+    "**/build",
+    "**/*.egg-info",
+    "**/venv",
+    "**/.venv",
+    "**/env",
+    "**/.env",
+    "tests",
+    "examples",
+    "scripts"
+  ],
+  "ignore": [
+    "**/migrations/**",
+    "**/settings/**",
+    "**/static/**",
+    "**/media/**"
+  ],
+  "defineConstant": {
+    "DEBUG": true
+  },
+  "stubPath": "stubs",
+  "reportMissingImports": "warning",
+  "reportMissingTypeStubs": "none",
+  "reportImportCycles": "warning",
+  "reportUnusedImport": "warning",
+  "reportUnusedClass": "warning",
+  "reportUnusedFunction": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "warning",
+  "reportOptionalSubscript": "warning",
+  "reportOptionalMemberAccess": "warning",
+  "reportOptionalCall": "warning",
+  "reportOptionalIterable": "warning",
+  "reportOptionalContextManager": "warning",
+  "reportOptionalOperand": "warning",
+  "reportTypedDictNotRequiredAccess": "warning",
+  "reportPrivateImportUsage": "warning",
+  "reportConstantRedefinition": "warning",
+  "reportIncompatibleMethodOverride": "warning",
+  "reportIncompatibleVariableOverride": "warning",
+  "reportInconsistentConstructor": "warning",
+  "reportOverlappingOverload": "warning",
+  "reportMissingParameterType": "warning",
+  "reportMissingTypeArgument": "warning",
+  "reportInvalidTypeVarUse": "warning",
+  "reportCallInDefaultInitializer": "warning",
+  "reportUnnecessaryIsInstance": "warning",
+  "reportUnnecessaryCast": "warning",
+  "reportUnnecessaryComparison": "warning",
+  "reportUnnecessaryContains": "warning",
+  "reportAssertAlwaysTrue": "warning",
+  "reportSelfClsParameterName": "warning",
+  "reportImplicitStringConcatenation": "warning",
+  "reportInvalidStubStatement": "warning",
+  "reportIncompleteStub": "warning",
+  "reportUnsupportedDunderAll": "warning",
+  "reportUnusedCoroutine": "warning",
+  "reportUnnecessaryTypeIgnoreComment": "warning",
+  "reportMatchNotExhaustive": "warning",
+  "reportUninitializedInstanceVariable": "warning",
+  "reportCallIssue": "none",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Linux",
+  "typeCheckingMode": "standard",
+  "useLibraryCodeForTypes": true,
+  "venvPath": ".",
+  "venv": ".venv",
+  "extraPaths": [
+    "src"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "src",
+      "pythonVersion": "3.12",
+      "pythonPlatform": "Linux",
+      "extraPaths": [
+        "src"
+      ]
+    }
+  ]
+}

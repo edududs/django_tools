@@ -1,9 +1,9 @@
-.PHONY: help clean ruff-fix ruff-check ruff-format workflow-check workflow-run workflow-version workflow-release workflow-release-push dry-push push commit-push pyright pyright-install
+.PHONY: help clean ruff-fix ruff-check ruff-format check check-fix full full-fix push push-force push-tags release release-push tag tag-list tag-create tag-create-push version deploy config pyright pyright-install
 
 help:
 	@echo "Available commands:"
 	@echo ""
-	@echo "Ruff Commands:"
+	@echo "Ruff Commands (legacy):"
 	@echo "  ruff-fix      - Format and fix code with Ruff (auto-fix lint and formatting issues)"
 	@echo "  ruff-check    - Check code formatting and linting (does not modify files)"
 	@echo "  ruff-format   - Check code formatting only (no lint checks)"
@@ -12,35 +12,72 @@ help:
 	@echo "  pyright      - Run Pyright static type checking"
 	@echo "  pyright-install - Install Pyright globally via npm"
 	@echo ""
-	@echo "Workflow Commands:"
-	@echo "  workflow-check        - Quick check (linting + formatting)"
-	@echo "  workflow-run          - Full workflow simulation (tests + release dry-run)"
-	@echo "  workflow-version      - Show current version and next possible versions"
-	@echo "  workflow-release      - Create release (bump version, create tag, no push)"
-	@echo "  workflow-release-push - Create release and push tags to remote"
-	@echo "  dry-push              - Run version, check, workflow, and clean in sequence"
+	@echo "Workflow Commands (recommended):"
+	@echo "  check [ARGS]  - Run Ruff checks (e.g., make check --fix --path /path)"
+	@echo "  check-fix     - Run Ruff checks with auto-fix"
+	@echo "  full [ARGS]   - Run all checks (e.g., make full --skip-pyright)"
+	@echo "  full-fix      - Run all checks with auto-fix"
+	@echo "  push [ARGS]   - Push commits/tags (e.g., make push --tags-only)"
+	@echo "  push-force    - Force push (skip validation)"
+	@echo "  push-tags     - Push only tags"
+	@echo "  release [ARGS] - Create release tag (e.g., make release --push)"
+	@echo "  release-push  - Create release tag and push it"
+	@echo "  tag [ARGS]    - Manage tags (e.g., make tag list)"
+	@echo "  tag-list      - List recent tags"
+	@echo "  version [ARGS] - Show version info"
+	@echo "  deploy [ARGS] - Complete deployment"
+	@echo "  config [ARGS] - Manage config (e.g., make config show)"
 	@echo ""
-	@echo "Git Commands:"
-	@echo "  push              - Run full validation and push committed changes (allows uncommitted files)"
-	@echo "  commit-push       - Add all changes, commit with message, and push"
+	@echo "Configuration Examples:"
+	@echo "  make config set-env --path /path/to/env"
+	@echo "  make config set-target --path /path/to/check"
+	@echo "  make config show"
+	@echo "  make config clear"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  clean             - Remove Python cache, egg-info, and lock/generated files"
+	@echo "  clean         - Remove Python cache, egg-info, and lock/generated files"
 	@echo ""
 	@echo "Usage: make <command>"
 
 clean:
-	find . -name "*.pyc" -delete
-	find . -name "__pycache__" -delete
-	find . -name "*.egg-info" -delete
-	find . -name "*.egg" -delete
-	find . -name "*.eggs" -delete
-	find . -name "*.ruff_cache" -delete
-	find . -name "*.mypy_cache" -delete
-	find . -name "*.pytest_cache" -delete
-	find . -name "*.typed" -delete
-	find . -name "*.lock" -delete
+	rm -rf \
+		__pycache__ \
+		*.pyc \
+		*.pyo \
+		*.egg-info \
+		*.egg \
+		.eggs \
+		build/ \
+		dist/ \
+		.ruff_cache/ \
+		.mypy_cache/ \
+		.pytest_cache/ \
+		htmlcov/ \
+		coverage.xml \
+		.tox/ \
+		.pyright/ \
+		*.typed \
+		*.lock \
+		.cache/ \
+		.pyre/ \
+		.pytype/ \
+		.nox/ \
+		site/ \
+		.DS_Store \
+		|| true
+	find . -name "*.pyc" -type f -delete 2>/dev/null || true
+	find . -name "*.pyo" -type f -delete 2>/dev/null || true
+	find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name "*.egg" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".ruff_cache" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".mypy_cache" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".pytest_cache" -type d -exec rm -rf {} + 2>/dev/null || true
 	find . -name ".pyright" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".pyre" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".pytype" -type d -exec rm -rf {} + 2>/dev/null || true
+	find . -name ".nox" -type d -exec rm -rf {} + 2>/dev/null || true
+
 
 
 ruff-fix:
@@ -54,61 +91,59 @@ ruff-check:
 ruff-format:
 	uv run ruff format --check src/
 
-# Workflow Dry Run Commands
-workflow-check:
-	uv run python scripts/workflow_dryrun.py check
+# Workflow Commands
+check:
+	uv run python -m scripts.workflow.cli check $(filter-out $@,$(MAKECMDGOALS))
 
-workflow-run:
-	uv run python scripts/workflow_dryrun.py run
+full:
+	uv run python -m scripts.workflow.cli full $(filter-out $@,$(MAKECMDGOALS))
 
-workflow-version:
-	uv run python scripts/workflow_dryrun.py version
+push:
+	uv run python -m scripts.workflow.cli push $(filter-out $@,$(MAKECMDGOALS))
 
-workflow-release:
-	uv run python scripts/workflow_dryrun.py release
+release:
+	uv run python -m scripts.workflow.cli release $(filter-out $@,$(MAKECMDGOALS))
 
-workflow-release-push:
-	uv run python scripts/workflow_dryrun.py release --push-tags
+tag:
+	uv run python -m scripts.workflow.cli tag $(filter-out $@,$(MAKECMDGOALS))
 
-dry-push: workflow-version workflow-check workflow-run clean
+version:
+	uv run python -m scripts.workflow.cli version $(filter-out $@,$(MAKECMDGOALS))
 
-push: workflow-check workflow-run
-	@echo ""
-	@echo "🔍 Checking if there are commits to push..."
-	@if ! git rev-list --count HEAD ^origin/$$(git branch --show-current) > /dev/null 2>&1 || [ $$(git rev-list --count HEAD ^origin/$$(git branch --show-current)) -eq 0 ]; then \
-		echo "❌ No commits to push. Your branch is up to date with remote."; \
-		exit 1; \
-	fi
-	@echo "✅ Found commits to push."
-	@echo ""
-	@echo "🚀 All validations passed! Pushing to remote..."
-	@echo ""
-	git push
-	@echo ""
-	@echo "✅ Push completed successfully!"
+deploy:
+	uv run python -m scripts.workflow.cli deploy $(filter-out $@,$(MAKECMDGOALS))
 
-commit-push:
-	@echo "🔍 Checking for changes to commit..."
-	@if [ -z "$$(git status --porcelain)" ]; then \
-		echo "❌ No changes to commit."; \
-		exit 1; \
-	fi
-	@echo "✅ Found changes to commit."
-	@echo ""
-	@echo "📝 Please enter your commit message:"
-	@read -p "Commit message: " msg; \
-	if [ -z "$$msg" ]; then \
-		echo "❌ Commit message cannot be empty."; \
-		exit 1; \
-	fi; \
-	echo ""; \
-	echo "🔄 Adding all changes..."; \
-	git add .; \
-	echo "📝 Committing with message: $$msg"; \
-	git commit -m "$$msg"; \
-	echo ""; \
-	echo "🚀 Running validations before push..."; \
-	$(MAKE) push
+config:
+	uv run python -m scripts.workflow.cli config $(filter-out $@,$(MAKECMDGOALS))
+
+# Workflow shortcuts (for convenience)
+check-fix:
+	uv run python -m scripts.workflow.cli check --fix
+
+full-fix:
+	uv run python -m scripts.workflow.cli full --fix
+
+push-force:
+	uv run python -m scripts.workflow.cli push --force --no-validate
+
+push-tags:
+	uv run python -m scripts.workflow.cli push --tags-only
+
+release-push:
+	uv run python -m scripts.workflow.cli release --push
+
+tag-list:
+	uv run python -m scripts.workflow.cli tag list
+
+tag-create:
+	uv run python -m scripts.workflow.cli tag create
+
+tag-create-push:
+	uv run python -m scripts.workflow.cli tag create --push
+
+# Catch-all target to allow passing arguments
+%:
+	@:
 
 # Pyright Commands
 pyright-install:

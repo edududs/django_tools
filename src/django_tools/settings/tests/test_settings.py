@@ -201,9 +201,7 @@ class TestRedisSettings:
     def test_load_from_fields_only(self, tmp_path: Path):
         """Loads only via individual fields."""
         env_file = tmp_path / ".env"
-        env_file.write_text(
-            'REDIS_HOST="myredis.com"\nREDIS_PORT=6380\nREDIS_DB=2\nREDIS_PASSWORD="mypass"'
-        )
+        env_file.write_text('REDIS_HOST="myredis.com"\nREDIS_PORT=6380\nREDIS_DB=2\nREDIS_PASSWORD="mypass"')
 
         settings = RedisSettings(_env_file=str(env_file))
 
