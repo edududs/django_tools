@@ -201,6 +201,7 @@ def push(
 def release(
     path: str = typer.Option(None, "--path", help="Project root directory"),
     push_after: bool = typer.Option(False, "--push", help="Push tag after creation"),
+    force: bool = typer.Option(False, "--force", help="Force overwrite existing tag"),
     validate: bool = typer.Option(
         True, "--validate/--no-validate", help="Run full validation before release"
     ),
@@ -246,6 +247,7 @@ def release(
         project_root,
         action="create",
         push=push_after,
+        force=force,
     )
 
     if not success:
@@ -258,6 +260,9 @@ def tag(
     path: str = typer.Option(None, "--path", help="Project root directory"),
     tag_name: str = typer.Option(None, "--name", help="Tag name (for delete action)"),
     push_after: bool = typer.Option(False, "--push", help="Push tag after creation"),
+    force: bool = typer.Option(
+        False, "--force", help="Force overwrite existing tag (create action)"
+    ),
     remote: bool = typer.Option(False, "--remote", help="Also delete from remote (delete action)"),
     limit: int = typer.Option(10, "--limit", help="Number of tags to show (list action)"),
 ):
@@ -274,6 +279,7 @@ def tag(
         project_root,
         action=action,
         push=push_after,
+        force=force,
         tag_name=tag_name,
         remote=remote,
         limit=limit,

@@ -17,6 +17,7 @@ def create_version_tag(
     project_root: Path,
     custom_version: str | None = None,
     push: bool = False,
+    force: bool = False,
 ) -> tuple[bool, str]:
     """Create a version tag.
 
@@ -25,6 +26,7 @@ def create_version_tag(
         project_root: Project root directory
         custom_version: Custom version string (uses current version if not provided)
         push: Whether to push the tag after creation
+        force: Force overwrite existing tag
 
     Returns:
         Tuple of (success, tag_name)
@@ -62,10 +64,11 @@ def create_version_tag(
         console.print("[yellow]Tag creation cancelled.[/yellow]")
         return False, ""
 
-    # Create tag
+    # Create tag (with force flag if requested)
+    force_flag = "-f" if force else ""
     result = runner.run_command(
         f"Create tag {tag_name}",
-        f'git tag -a {tag_name} -m "Release {tag_version}"',
+        f'git tag {force_flag} -a {tag_name} -m "Release {tag_version}"',
     )
 
     if not result.success:
@@ -76,9 +79,10 @@ def create_version_tag(
 
     # Push tag if requested
     if push:
+        force_push = "--force" if force else ""
         push_result = runner.run_command(
             f"Push tag {tag_name}",
-            f"git push origin {tag_name}",
+            f"git push {force_push} origin {tag_name}",
         )
 
         if push_result.success:
@@ -184,6 +188,7 @@ def tag_command(
     action: str = "create",
     custom_version: str | None = None,
     push: bool = False,
+    force: bool = False,
     tag_name: str | None = None,
     remote: bool = False,
     limit: int = 10,
@@ -195,6 +200,7 @@ def tag_command(
         action: Action to perform ("create", "list", "delete")
         custom_version: Custom version for create action
         push: Whether to push tag after creation
+        force: Force overwrite existing tag (create action)
         tag_name: Tag name for delete action
         remote: Whether to delete from remote (delete action)
         limit: Number of tags to show (list action)
@@ -211,6 +217,7 @@ def tag_command(
             project_root,
             custom_version=custom_version,
             push=push,
+            force=force,
         )
         return success
 

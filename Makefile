@@ -1,4 +1,4 @@
-.PHONY: help clean ruff-fix ruff-check ruff-format check check-fix full full-fix push push-force push-tags release release-push tag tag-list tag-create tag-create-push version deploy config pyright pyright-install
+.PHONY: help clean ruff-fix ruff-check ruff-format check check-fix full full-fix push push-force push-tags release release-push release-force tag tag-list tag-create tag-create-push tag-create-force version deploy config pyright pyright-install
 
 help:
 	@echo "Available commands:"
@@ -13,20 +13,22 @@ help:
 	@echo "  pyright-install - Install Pyright globally via npm"
 	@echo ""
 	@echo "Workflow Commands (recommended):"
-	@echo "  check [ARGS]  - Run Ruff checks (e.g., make check --fix --path /path)"
-	@echo "  check-fix     - Run Ruff checks with auto-fix"
-	@echo "  full [ARGS]   - Run all checks (e.g., make full --skip-pyright)"
-	@echo "  full-fix      - Run all checks with auto-fix"
-	@echo "  push [ARGS]   - Push commits/tags (e.g., make push --tags-only)"
-	@echo "  push-force    - Force push (skip validation)"
-	@echo "  push-tags     - Push only tags"
-	@echo "  release [ARGS] - Create release tag (e.g., make release --push)"
-	@echo "  release-push  - Create release tag and push it"
-	@echo "  tag [ARGS]    - Manage tags (e.g., make tag list)"
-	@echo "  tag-list      - List recent tags"
-	@echo "  version [ARGS] - Show version info"
-	@echo "  deploy [ARGS] - Complete deployment"
-	@echo "  config [ARGS] - Manage config (e.g., make config show)"
+	@echo "  check [ARGS]     - Run Ruff checks (e.g., make check --fix --path /path)"
+	@echo "  check-fix        - Run Ruff checks with auto-fix"
+	@echo "  full [ARGS]      - Run all checks (e.g., make full --skip-pyright)"
+	@echo "  full-fix         - Run all checks with auto-fix"
+	@echo "  push [ARGS]      - Push commits/tags (e.g., make push --tags-only)"
+	@echo "  push-force       - Force push (skip validation)"
+	@echo "  push-tags        - Push only tags"
+	@echo "  release [ARGS]   - Create release tag (e.g., make release --push --force)"
+	@echo "  release-push     - Create release tag and push it"
+	@echo "  release-force    - Create release tag and force push (overwrite existing)"
+	@echo "  tag [ARGS]       - Manage tags (e.g., make tag list)"
+	@echo "  tag-list         - List recent tags"
+	@echo "  tag-create-force - Create tag and force push (overwrite existing)"
+	@echo "  version [ARGS]   - Show version info"
+	@echo "  deploy [ARGS]    - Complete deployment"
+	@echo "  config [ARGS]    - Manage config (e.g., make config show)"
 	@echo ""
 	@echo "Configuration Examples:"
 	@echo "  make config set-env --path /path/to/env"
@@ -132,6 +134,9 @@ push-tags:
 release-push:
 	uv run python -m scripts.workflow.cli release --push
 
+release-force:
+	uv run python -m scripts.workflow.cli release --push --force
+
 tag-list:
 	uv run python -m scripts.workflow.cli tag list
 
@@ -140,6 +145,9 @@ tag-create:
 
 tag-create-push:
 	uv run python -m scripts.workflow.cli tag create --push
+
+tag-create-force:
+	uv run python -m scripts.workflow.cli tag create --push --force
 
 # Catch-all target to allow passing arguments
 %:
