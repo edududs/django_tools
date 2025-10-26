@@ -1,287 +1,439 @@
 # Workflow Automation System
 
-Sistema modular de automação para qualidade de código e gerenciamento de releases.
+Modular automation system for code quality and release management.
 
-## Visão Geral
+## Overview
 
-O sistema de workflow é sua **central de comando** para garantir qualidade de código antes de fazer push. Ele integra validações (Ruff, Pyright, testes) com operações Git (push, tags, releases) de forma modular e extensível.
+The workflow system is your **command center** to ensure code quality before pushing. It integrates validations (Ruff, Pyright, tests) with Git operations (push, tags, releases) in a modular and extensible way.
 
-## Instalação
+## Installation
 
-Todas as dependências estão incluídas no `pyproject.toml`:
+All dependencies are included in `pyproject.toml`:
 
 ```bash
 uv sync --dev
 ```
 
-## Arquitetura
+## Architecture
 
 ```
 scripts/workflow/
-├── cli.py              # Interface CLI principal
-├── core/               # Componentes centrais
+├── cli.py              # Main CLI interface
+├── config.py           # Configuration management
+├── core/               # Core components
 │   ├── models.py       # CommandResult, JobResult
 │   └── runner.py       # WorkflowRunner
-├── commands/           # Comandos modulares
-│   ├── check.py        # Validações (ruff, pyright, tests)
-│   ├── push.py         # Operações de push
-│   ├── tag.py          # Gerenciamento de tags
-│   └── version.py      # Informações de versão
-└── utils/              # Utilitários
-    └── git.py          # Funções Git
+├── commands/           # Modular commands
+│   ├── check.py        # Validations (ruff, pyright, tests)
+│   ├── push.py         # Push operations
+│   ├── tag.py          # Tag management
+│   └── version.py      # Version information
+└── utils/              # Utilities
+    └── git.py          # Git functions
 ```
 
-## Uso via Makefile (Recomendado)
+## Configuration System
 
-### Comandos de Validação
+The workflow supports **persistent configuration** to use one environment's settings to validate code anywhere in your system.
+
+### Configuration File
+
+Configuration is stored in `~/.workflow_config.json` and includes:
+
+- **Environment Root**: Where `pyproject.toml` and dependencies are located
+- **Target Path**: Where to validate code (optional, defaults to `src/`)
+
+### Configuration Commands
 
 ```bash
-# Verificação rápida (apenas Ruff)
+# Show current configuration
+make config show
+
+# Set environment root (where pyproject.toml is)
+make config set-env -- --path /path/to/environment
+
+# Set target path (where to validate code)
+make config set-target -- --path /path/to/validate
+
+# Clear all configuration
+make config clear
+```
+
+### Configuration Workflow
+
+**Scenario 1: Validate multiple projects with same rules**
+
+```bash
+# Configure environment once
+make config set-env -- --path /home/user/main-environment
+
+# Validate different projects using same environment
+make check -- --path /project1
+make check -- --path /project2
+make check -- --path /project3
+```
+
+**Scenario 2: Fixed environment + fixed target**
+
+```bash
+# Configure once
+make config set-env -- --path /my/environment
+make config set-target -- --path /my/code
+
+# Use always
+make check
+make full
+```
+
+**Scenario 3: Normal development**
+
+```bash
+# No configuration, uses current directory
+make check
+make full
+make push
+```
+
+## Usage via Makefile (Recommended)
+
+All Makefile commands support **dynamic arguments** using the pattern:
+
+```bash
+make command [args...]
+```
+
+Use `--` to separate Make options from command arguments:
+
+```bash
+make command -- --flag value
+```
+
+### Validation Commands
+
+```bash
+# Quick check (Ruff only)
 make check
 
-# Verificação rápida com auto-fix
+# Quick check with auto-fix
 make check-fix
 
-# Verificação completa (Ruff + Pyright + Testes)
+# Check with custom arguments
+make check -- --fix --path /custom/path
+
+# Full check (Ruff + Pyright + Tests)
 make full
 
-# Verificação completa com auto-fix
+# Full check with auto-fix
 make full-fix
+
+# Full check with custom arguments
+make full -- --skip-pyright --fix
 ```
 
-### Comandos de Push
+### Push Commands
 
 ```bash
-# Push com validação automática
+# Push with automatic validation
 make push
 
-# Push forçado (sem validação - use com cuidado!)
+# Force push (no validation - use with caution!)
 make push-force
 
-# Push apenas tags
+# Push only tags
 make push-tags
+
+# Push with custom arguments
+make push -- --tags-only --no-validate
 ```
 
-### Comandos de Release
+### Release Commands
 
 ```bash
-# Criar tag de release (valida antes)
+# Create release tag (validates first)
 make release
 
-# Criar tag e fazer push imediatamente
+# Create tag and push immediately
 make release-push
+
+# Release with custom arguments
+make release -- --push --no-validate
 ```
 
-### Comandos de Tag
+### Tag Commands
 
 ```bash
-# Listar tags recentes
+# List recent tags
 make tag-list
 
-# Criar tag manualmente
+# Create tag manually
 make tag-create
 
-# Criar tag e fazer push
+# Create tag and push
 make tag-create-push
+
+# Tag with custom arguments
+make tag list -- --limit 20
+make tag create -- --push
+make tag delete -- --name v1.0.0 --remote
 ```
 
-### Comandos Utilitários
+### Utility Commands
 
 ```bash
-# Mostrar versão atual e próximas versões
+# Show current and next versions
 make version
 
-# Deploy completo (validação + push tudo)
+# Version with custom path
+make version -- --path /other/project
+
+# Complete deployment (validation + push all)
 make deploy
+
+# Deploy with custom arguments
+make deploy -- --skip-validation
 ```
 
-## Uso via CLI Direto
+## Direct CLI Usage
 
-### Validações
+### Validations
 
 ```bash
-# Apenas Ruff
+# Ruff only
 uv run python -m scripts.workflow.cli check
 
-# Ruff com auto-fix
+# Ruff with auto-fix
 uv run python -m scripts.workflow.cli check --fix
 
-# Adicionar Pyright
+# Add Pyright
 uv run python -m scripts.workflow.cli check --pyright
 
-# Adicionar testes
+# Add tests
 uv run python -m scripts.workflow.cli check --tests
 
-# Tudo junto
+# Everything together
 uv run python -m scripts.workflow.cli full
 
-# Tudo com auto-fix
+# Everything with auto-fix
 uv run python -m scripts.workflow.cli full --fix
 
-# Pular Pyright
+# Skip Pyright
 uv run python -m scripts.workflow.cli full --skip-pyright
 
-# Pular testes
+# Skip tests
 uv run python -m scripts.workflow.cli full --skip-tests
+
+# Custom path
+uv run python -m scripts.workflow.cli check --path /custom/path
 ```
 
 ### Push
 
 ```bash
-# Push com validação
+# Push with validation
 uv run python -m scripts.workflow.cli push
 
-# Push sem validação
+# Push without validation
 uv run python -m scripts.workflow.cli push --no-validate
 
-# Push forçado
+# Force push
 uv run python -m scripts.workflow.cli push --force
 
-# Push apenas tags
+# Push only tags
 uv run python -m scripts.workflow.cli push --tags-only
+
+# Custom path
+uv run python -m scripts.workflow.cli push --path /custom/path
 ```
 
 ### Release
 
 ```bash
-# Criar tag (valida antes)
+# Create tag (validates first)
 uv run python -m scripts.workflow.cli release
 
-# Criar tag e fazer push
+# Create tag and push
 uv run python -m scripts.workflow.cli release --push
 
-# Criar tag sem validação
+# Create tag without validation
 uv run python -m scripts.workflow.cli release --no-validate
+
+# Custom path
+uv run python -m scripts.workflow.cli release --path /custom/path
 ```
 
 ### Tags
 
 ```bash
-# Listar tags
+# List tags
 uv run python -m scripts.workflow.cli tag list
 
-# Listar mais tags
+# List more tags
 uv run python -m scripts.workflow.cli tag list --limit 20
 
-# Criar tag
+# Create tag
 uv run python -m scripts.workflow.cli tag create
 
-# Criar tag e fazer push
+# Create tag and push
 uv run python -m scripts.workflow.cli tag create --push
 
-# Deletar tag local
+# Delete local tag
 uv run python -m scripts.workflow.cli tag delete --name v1.0.0
 
-# Deletar tag local e remota
+# Delete local and remote tag
 uv run python -m scripts.workflow.cli tag delete --name v1.0.0 --remote
+
+# Custom path
+uv run python -m scripts.workflow.cli tag list --path /custom/path
 ```
 
-### Versão
+### Version
 
 ```bash
-# Mostrar informações de versão
+# Show version information
 uv run python -m scripts.workflow.cli version
+
+# Custom path
+uv run python -m scripts.workflow.cli version --path /custom/path
 ```
 
 ### Deploy
 
 ```bash
-# Deploy completo (validação + push)
+# Complete deployment (validation + push)
 uv run python -m scripts.workflow.cli deploy
 
-# Deploy sem validação (não recomendado)
+# Deploy without validation (not recommended)
 uv run python -m scripts.workflow.cli deploy --skip-validation
+
+# Custom path
+uv run python -m scripts.workflow.cli deploy --path /custom/path
 ```
 
-## Fluxos de Trabalho Recomendados
-
-### 1. Desenvolvimento Normal
+### Configuration
 
 ```bash
-# Durante desenvolvimento
-make check-fix          # Valida e corrige Ruff
+# Show configuration
+uv run python -m scripts.workflow.cli config show
 
-# Antes de commitar
-make full               # Validação completa
+# Set environment root
+uv run python -m scripts.workflow.cli config set-env --path /path/to/env
 
-# Após commitar
-make push               # Push com validação
+# Set target path
+uv run python -m scripts.workflow.cli config set-target --path /path/to/target
+
+# Clear configuration
+uv run python -m scripts.workflow.cli config clear
 ```
 
-### 2. Release com Tag
+## Recommended Workflows
+
+### 1. Normal Development
 
 ```bash
-# 1. Atualizar versão no pyproject.toml manualmente
-vim pyproject.toml      # Alterar version = "X.Y.Z"
+# During development
+make check-fix          # Validate and fix Ruff
 
-# 2. Commitar a mudança de versão
+# Before committing
+make full               # Complete validation
+
+# After committing
+make push               # Push with validation
+```
+
+### 2. Release with Tag
+
+```bash
+# 1. Update version in pyproject.toml manually
+vim pyproject.toml      # Change version = "X.Y.Z"
+
+# 2. Commit version change
 git add pyproject.toml
 git commit -m "chore: bump version to X.Y.Z"
 
-# 3. Criar tag e fazer push
-make release-push       # Valida, cria tag, e faz push
+# 3. Create tag and push
+make release-push       # Validates, creates tag, and pushes
 ```
 
-### 3. Deploy Rápido
+### 3. Quick Deploy
 
 ```bash
-# Após commitar suas mudanças
-make deploy             # Valida tudo e faz push
+# After committing your changes
+make deploy             # Validates everything and pushes
 ```
 
-### 4. Correção Urgente (Hotfix)
+### 4. Urgent Fix (Hotfix)
 
 ```bash
-# Validação mínima + push
+# Minimal validation + push
 make check
-make push-force         # Pula validação completa
+make push-force         # Skips full validation
 ```
 
-## O Que Cada Comando Valida
+### 5. Multi-Project Validation
+
+```bash
+# Configure environment once
+make config set-env -- --path /home/user/main-project
+
+# Validate different directories
+make check -- --path /project-a/src
+make check -- --path /project-b/lib
+make check -- --path /project-c/app
+```
+
+## What Each Command Validates
 
 ### `check` (Ruff)
-- ✅ Instalação do Ruff
-- ✅ Linting (com ou sem auto-fix)
-- ✅ Formatação (com ou sem auto-fix)
 
-### `full` (Completo)
-- ✅ Ruff (linting + formatação)
+- ✅ Ruff installation
+- ✅ Linting (with or without auto-fix)
+- ✅ Formatting (with or without auto-fix)
+
+### `full` (Complete)
+
+- ✅ Ruff (linting + formatting)
 - ✅ Pyright (type checking)
-- ✅ Pytest (testes com coverage)
+- ✅ Pytest (tests with coverage)
 
-### `push` (Push com Validação)
+### `push` (Push with Validation)
+
 - ✅ Ruff checks
-- ✅ Verifica se há commits para push
-- ✅ Push de commits
-- ✅ Push de tags (se houver)
+- ✅ Checks if there are commits to push
+- ✅ Push commits
+- ✅ Push tags (if any)
 
-### `release` (Release com Tag)
-- ✅ Validação completa (Ruff + Pyright + Testes)
-- ✅ Lê versão do pyproject.toml
-- ✅ Cria tag anotada (v{version})
-- ✅ Opcionalmente faz push da tag
+### `release` (Release with Tag)
 
-### `deploy` (Deploy Completo)
-- ✅ Validação completa
-- ✅ Push de commits
-- ✅ Push de tags
+- ✅ Complete validation (Ruff + Pyright + Tests)
+- ✅ Reads version from pyproject.toml
+- ✅ Creates annotated tag (v{version})
+- ✅ Optionally pushes the tag
 
-## Diferenças do Sistema Antigo
+### `deploy` (Complete Deploy)
 
-### Antes (`workflow_dryrun.py`)
-- Monolítico (um arquivo único)
-- Simulava CI/CD localmente
-- Release automático no CI/CD
+- ✅ Complete validation
+- ✅ Push commits
+- ✅ Push tags
 
-### Agora (Package `workflow`)
-- **Modular**: Separação clara de responsabilidades
-- **Extensível**: Fácil adicionar novos comandos
-- **Controle local**: Releases manuais via CLI
-- **CI/CD simplificado**: Apenas testes, sem releases
+## Differences from Old System
 
-## Integração com CI/CD
+### Before (`workflow_dryrun.py`)
 
-O CI/CD agora é **apenas para validação**:
+- Monolithic (single file)
+- Simulated CI/CD locally
+- Automatic release in CI/CD
+
+### Now (`workflow` Package)
+
+- **Modular**: Clear separation of responsibilities
+- **Extensible**: Easy to add new commands
+- **Local control**: Manual releases via CLI
+- **Simplified CI/CD**: Tests only, no releases
+- **Configuration system**: Validate code anywhere with any environment
+
+## CI/CD Integration
+
+CI/CD is now **for validation only**:
 
 ```yaml
 # .github/workflows/ci.yml
@@ -291,61 +443,101 @@ jobs:
     - Run tests
 ```
 
-**Releases são feitos localmente** via `make release-push`.
+**Releases are done locally** via `make release-push`.
+
+## Error Output
+
+The system provides **detailed error information**:
+
+- Specific commands that failed
+- Error output in red
+- Structured summary of failed checks
+- Helpful tips for fixing (e.g., use `--fix`)
+
+Example output on failure:
+
+```
+❌ Ruff checks failed with errors:
+
+Failed command: Run Ruff format check
+
+Would reformat: src/file.py
+1 file would be reformatted
+
+✗ Some checks failed
+
+Failed checks:
+  • RUFF: 1 command(s) failed
+
+💡 Tip: Run with --fix to auto-fix some issues.
+```
 
 ## Troubleshooting
 
-### Script não encontra pyproject.toml
+### Script can't find pyproject.toml
 
 ```bash
 cd /path/to/django_tools
+# or
+make config set-env -- --path /path/to/project
 ```
 
-### Testes falhando
+### Tests failing
 
 ```bash
 uv run pytest src/ -v
 ```
 
-### Ruff encontra erros
+### Ruff finds errors
 
 ```bash
 make check-fix
 ```
 
-### Pyright encontra erros
+### Pyright finds errors
 
 ```bash
 pyright
-# ou
+# or
 make pyright
 ```
 
-### Push falha por falta de commits
+### Push fails due to no commits
 
 ```bash
-# Verifique se há commits para push
+# Check if there are commits to push
 git status
 git log origin/main..HEAD
 ```
 
-### Tag já existe
+### Tag already exists
 
 ```bash
-# Delete a tag local
+# Delete local tag
 git tag -d v1.0.0
 
-# Delete a tag remota
+# Delete remote tag
 git push origin --delete v1.0.0
 
-# Ou use o comando
+# Or use the command
 make tag-list
 uv run python -m scripts.workflow.cli tag delete --name v1.0.0 --remote
 ```
 
-## Comandos Legacy (Ruff direto)
+### Configuration issues
 
-Ainda disponíveis para compatibilidade:
+```bash
+# Show current configuration
+make config show
+
+# Clear and reconfigure
+make config clear
+make config set-env -- --path /correct/path
+```
+
+## Legacy Commands (Direct Ruff)
+
+Still available for compatibility:
 
 ```bash
 make ruff-fix           # Ruff format + check --fix
@@ -353,45 +545,48 @@ make ruff-check         # Ruff format --check + check
 make ruff-format        # Ruff format --check
 ```
 
-**Recomendação**: Use os novos comandos `make check` e `make full`.
+**Recommendation**: Use the new commands `make check` and `make full`.
 
-## Dependências
+## Dependencies
 
-- `typer`: Framework CLI
-- `rich`: Visualização rica no terminal
-- `pytest`: Framework de testes
-- `ruff`: Linter e formatador
-- `pyright`: Type checker (opcional)
+- `typer`: CLI framework
+- `rich`: Rich terminal visualization
+- `pytest`: Test framework
+- `ruff`: Linter and formatter
+- `pyright`: Type checker (optional)
 
-Todas instaladas automaticamente com `uv sync --dev`.
+All automatically installed with `uv sync --dev`.
 
-## Contribuindo
+## Contributing
 
-Para adicionar novos comandos:
+To add new commands:
 
-1. Crie módulo em `scripts/workflow/commands/`
-2. Implemente função `{command}_command(project_root, ...)`
-3. Exponha em `scripts/workflow/commands/__init__.py`
-4. Adicione comando no `cli.py`
-5. Adicione atalho no `Makefile`
+1. Create module in `scripts/workflow/commands/`
+2. Implement function `{command}_command(project_root, ...)`
+3. Export in `scripts/workflow/commands/__init__.py`
+4. Add command in `cli.py`
+5. Add shortcut in `Makefile`
 
-Exemplo:
+Example:
 
 ```python
 # scripts/workflow/commands/mycommand.py
-def mycommand_command(project_root: Path) -> bool:
+def mycommand_command(project_root: Path, target_path: Path | None = None) -> bool:
     runner = WorkflowRunner(project_root)
-    # ... implementação
+    # ... implementation
     return True
 ```
 
 ```python
 # scripts/workflow/cli.py
 @app.command()
-def mycommand():
+def mycommand(
+    path: str = typer.Option(None, "--path", help="Project root directory"),
+):
     """My custom command."""
-    project_root = get_project_root()
-    success = mycommand_command(project_root)
+    project_root = get_project_root(path)
+    target_path = get_target_path()
+    success = mycommand_command(project_root, target_path)
     if not success:
         raise typer.Exit(1)
 ```
@@ -399,5 +594,57 @@ def mycommand():
 ```makefile
 # Makefile
 mycommand:
-	uv run python -m scripts.workflow.cli mycommand
+ uv run python -m scripts.workflow.cli mycommand $(filter-out $@,$(MAKECMDGOALS))
 ```
+
+## Advanced Features
+
+### Dynamic Arguments in Makefile
+
+The Makefile uses `$(filter-out $@,$(MAKECMDGOALS))` to pass arguments dynamically:
+
+```bash
+# All these work:
+make check --fix
+make check --path /custom/path --fix
+make full --skip-pyright --skip-tests
+make tag list --limit 50
+make config set-env --path /my/env
+```
+
+**Note**: Use `--` to separate Make options from command arguments when needed:
+
+```bash
+make config set-env -- --path /path/with/spaces
+```
+
+### Configuration Persistence
+
+Configuration is stored in `~/.workflow_config.json`:
+
+```json
+{
+  "env_root": "/home/user/main-project",
+  "target_path": "/home/user/code-to-validate"
+}
+```
+
+This allows you to:
+
+- Set up once, use everywhere
+- Validate code in any directory with consistent rules
+- Switch between projects easily
+- Share configurations across team members
+
+### Priority Order
+
+When determining which path to use:
+
+1. **`--path` argument** (highest priority, temporary override)
+2. **Configured env_root** (from `config set-env`)
+3. **Current directory** (default fallback)
+
+When determining target path:
+
+1. **Configured target_path** (from `config set-target`)
+2. **`src/` directory** (default)

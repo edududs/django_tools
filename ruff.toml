@@ -1,65 +1,64 @@
-# Configuração do Ruff baseada nas preferências do VS Code
-line-length = 100
+line-length = 110
 
-# Regras de linting selecionadas
+# Selected linting rules
 [lint]
 select = [
-    "E",      # Erros (pep8, Erros de sintaxe)
-    "F",      # Flake8 (Erros lógicos, Flake8-bugbear, etc.)
-    "W",      # Warnings (pep8, Avisos)
-    "I",      # isort (Organização de imports)
-    "N",      # Naming (Convenções de nomenclatura - PEP8)
-    "B",      # Bugbear (Avisos de prováveis bugs ou design ruim)
-    "A",      # Builtins (Conflitos com built-ins do Python)
-    "C4",     # Comprehensions (Sugere list/dict/set comprehensions)
-    "SIM",    # Simplifiable (Sugestões de simplificação de código)
-    "ERA",    # Eradicate (Comentários de código desnecessários/morto)
-    "UP",     # Modernize (Sugestões de sintaxe moderna)
-    "S",      # Bandit (Regras de segurança)
-    "RET",    # Return (Retorno de código)
-    "SLF",    # Self (Regras de primeiro argumento de método/função)
-    "ARG",    # Arguments (Argumentos não utilizados)
-    "PTH",    # Pathlib (Sugere o uso de 'pathlib')
-    "PL",     # Pylint (Regras gerais do Pylint)
-    "RUF",    # Ruff (Regras próprias do Ruff)
-    "COM",    # Comments (Regras para comentários)
-    "DTZ",    # DateTime (Regras de fuso horário)
-    "C90",    # Complexity (Complexidade Ciclomática)
-    "D",      # Docstrings (Regras de docstrings)
-    "ICN",    # Import Conventions (Convenções de importação)
-    "ISC",    # Implicit String Concatenation (Concatenação implícita de strings)
-    "PIE",    # Pyupgrade-like (Otimização de sintaxe Python)
-    "PT",     # Pytest (Regras para testes Pytest)
-    "Q",      # Quote (Consistência de aspas)
-    "RSE",    # Raise (Boas práticas ao levantar exceções)
-    "TID",    # Tidy (Regras de organização)
-    "YTT",    # Yield (Regras para funções geradoras)
-    "BLE",    # Blind Exceptions (Exceções genéricas)
-    "FBT",    # Boolean Trailing (Argumentos booleanos no final)
-    "DJ",     # Django (Regras específicas para Django)
-    "EM",     # Error Message (Melhores mensagens de erro)
-    "EXE",    # Executable (Verifica permissões de execução)
-    "FA",     # F-String (Sugere o uso de f-strings)
-    "G",      # Logging (Boas práticas de logging)
-    "INP",    # Implicit Namespace Package (Regras de pacotes de namespace)
-    "T10",    # Debug (Pontos de debug em código)
-    "PYI",    # Pyright (Regras de tipagem)
-    "SLOT",   # Slots (Sugere o uso de __slots__)
+    "E",      # Errors (PEP8, Syntax errors)
+    "F",      # Flake8 (Logical errors, Flake8-bugbear, etc.)
+    "W",      # Warnings (PEP8, Warnings)
+    "I",      # isort (Import organization)
+    "N",      # Naming (Naming conventions - PEP8)
+    "B",      # Bugbear (Possible bugs or bad design)
+    "A",      # Builtins (Conflicts with Python built-ins)
+    "C4",     # Comprehensions (Suggests list/dict/set comprehensions)
+    "SIM",    # Simplifiable (Code simplification suggestions)
+    "ERA",    # Eradicate (Unnecessary/dead code comments)
+    "UP",     # Modernize (Modern Python syntax suggestions)
+    "S",      # Bandit (Security rules)
+    "RET",    # Return (Return code rules)
+    "SLF",    # Self (Rules for first argument of methods/functions)
+    "ARG",    # Arguments (Unused arguments)
+    "PTH",    # Pathlib (Suggests usage of 'pathlib')
+    "PL",     # Pylint (General Pylint rules)
+    "RUF",    # Ruff (Ruff-specific rules)
+    "COM",    # Comments (Commenting rules)
+    "DTZ",    # DateTime (Timezone rules)
+    "C90",    # Complexity (Cyclomatic complexity)
+    "D",      # Docstrings (Docstring rules)
+    "ICN",    # Import Conventions (Import conventions)
+    "ISC",    # Implicit String Concatenation
+    "PIE",    # Pyupgrade-like (Python syntax optimizations)
+    "PT",     # Pytest (Rules for Pytest tests)
+    "Q",      # Quote (Quote consistency)
+    "RSE",    # Raise (Exception raising best practices)
+    "TID",    # Tidy (Code organization rules)
+    "YTT",    # Yield (Generator function rules)
+    "BLE",    # Blind Exceptions (Generic exception handling)
+    "FBT",    # Boolean Trailing (Trailing boolean arguments)
+    "DJ",     # Django (Django-specific rules)
+    "EM",     # Error Message (Better error messages)
+    "EXE",    # Executable (Execution permissions checks)
+    "FA",     # F-String (F-string usage suggestions)
+    "G",      # Logging (Logging best practices)
+    "INP",    # Implicit Namespace Package rules
+    "T10",    # Debug (Debugging statements in code)
+    "PYI",    # Pyright (Typing rules)
+    "SLOT",   # Slots (Suggests use of __slots__)
     "INT",    # Internationalization (i18n)
-    "PD",     # Pandas (Regras específicas para Pandas)
-    "PGH",    # Pygame Helpers (Regras para Pygame)
-    "TRY",    # Try (Melhores práticas de try-except)
-    "FLY",    # Flynt (Uso de f-strings)
-    "NPY",    # Numpy (Regras específicas para Numpy)
-    "AIR",    # Airflow (Regras específicas para Airflow)
-    "PERF",   # Perflint (Sugestões de performance)
-    "FURB",   # Furb (Autofix de código)
-    "LOG",    # Logging (Regras adicionais de logging)
+    "PD",     # Pandas-specific rules
+    "PGH",    # Pygame Helpers
+    "TRY",    # Try (Exception handling best practices)
+    "FLY",    # Flynt (F-string usage)
+    "NPY",    # Numpy-specific rules
+    "AIR",    # Airflow-specific rules
+    "PERF",   # Perflint (Performance suggestions)
+    "FURB",   # Furb (Code autofixes)
+    "LOG",    # Additional logging rules
 ]
 
-# Regras ignoradas
+# Ignored rules
 ignore = [
-    "E501",      # Line too long (já configurado com line-length)
+    "E501",      # Line too long (controlled via line-length)
     "D100",      # Missing docstring in public module
     "D101",      # Missing docstring in public class
     "D102",      # Missing docstring in public method
@@ -68,22 +67,19 @@ ignore = [
     "D105",      # Missing docstring in magic method
     "D106",      # Missing docstring in public nested class
     "D107",      # Missing docstring in __init__
-    "D203",      # 1 blank line required before class docstring (incompatível com D211)
-    "D213",      # Multi-line docstring summary should start at the second line (incompatível com D212)
+    "D203",      # 1 blank line required before class docstring (conflicts with D211)
+    "D213",      # Multi-line docstring summary should start at the second line (conflicts with D212)
     "D205",      # 1 blank line required between summary line and description
     "D401",      # First line should be imperative
     "UP006",     # Use list instead of list()
     "UP035",     # Use X instead of Y
     "PLR2004",   # Magic constant
-    "PLR6301",   # Method could be a function
     "PLC0415",   # Import aliased to import_module
     "PLR0904",   # Too many public methods
     "S608",      # SQL query building (SQL injection risk)
     "N806",      # Variable in function should be lowercase
     "B905",      # Zip without strict=True
-    "C901",      # Too complex (Cyclomatic Complexity)
     "PLR0913",   # Too many arguments
-    "S101",      # Use of assert
     "FBT001",    # Boolean default value
     "FBT002",    # Boolean positional argument
     "FBT003",    # Boolean positional argument default
@@ -119,49 +115,49 @@ ignore = [
     "B904",      # Use raise from to specify exception cause
 ]
 
-# Configurações específicas por arquivo
+# Per-file specific configuration
 [lint.per-file-ignores]
 "__init__.py" = ["F401", "F403", "F405"]
-# Arquivos de teste - ignorar erros comuns de segurança e debug
+# Test files - ignore common security and debug errors
 "**/test_*.py" = [
-    "S105",      # Possible hardcoded password (senhas em testes são aceitáveis)
-    "S101",      # Use of assert (assert é comum em testes)
-    "T100",      # Import for debugger found (debuggers em testes são aceitáveis)
-    "T201",      # Print statement (prints em testes são aceitáveis)
-    "T20",       # Print statements (prints em testes são aceitáveis)
-    "PLR2004",   # Magic constant (constantes mágicas em testes são aceitáveis)
-    "PLR0913",   # Too many arguments (testes podem ter muitos argumentos)
-    "PLR0912",   # Too many branches (testes podem ter muitos branches)
-    "PLR0915",   # Too many statements (testes podem ter muitas statements)
-    "PLR0917",   # Too many arguments on a call (testes podem ter muitas chamadas)
-    "C901",      # Too complex (testes podem ser complexos)
-    "B008",      # Function call as default argument (comum em fixtures)
-    "FBT001",    # Boolean default value (comum em testes)
-    "FBT002",    # Boolean positional argument (comum em testes)
-    "FBT003",    # Boolean positional argument default (comum em testes)
-    "A003",      # Shadowing built-ins (comum em testes)
-    "COM812",    # Missing trailing comma (não crítico em testes)
-    "ISC001",    # Single-line implicit string concatenation (aceitável em testes)
-    "Q000",      # Unnecessary quote (não crítico em testes)
-    "Q001",      # Single/Double quote (não crítico em testes)
-    "Q002",      # Unnecessary quote around string literal (não crítico em testes)
-    "Q003",      # Avoid using single quotes for module level docstrings (não crítico em testes)
-    "ERA001",    # Commented-out code (comum em testes para documentação)
-    "G004",      # Use f-string for logging (não crítico em testes)
-    "TRY003",    # Avoid bare except (comum em testes para capturar qualquer exceção)
-    "TID252",    # Banned imports (imports específicos de teste são aceitáveis)
-    "BLE001",    # Blind exception (comum em testes)
-    "PTH123",    # Use open instead of Path.open (não crítico em testes)
-    "UP045",     # Use dict.get instead of if/else (não crítico em testes)
-    "RUF029",    # Prefer f-string (não crítico em testes)
-    "EM101",     # Error message must be a string (não crítico em testes)
-    "TRY300",    # Avoid using 'raise from' on exceptions (comum em testes)
-    "TRY301",    # Avoid using 'raise from' on exceptions (comum em testes)
-    "RUF012",    # Class-level mutable default (comum em fixtures)
-    "S311",      # Use of insecure function random.choice (aceitável em testes)
-    "B904",      # Use raise from to specify exception cause (comum em testes)
+    "S105",      # Possible hardcoded password (acceptable in tests)
+    "S101",      # Use of assert (assert is common in tests)
+    "T100",      # Import for debugger found (debuggers are acceptable in tests)
+    "T201",      # Print statement (prints are acceptable in tests)
+    "T20",       # Print statements (prints are acceptable in tests)
+    "PLR2004",   # Magic constant (magic constants are acceptable in tests)
+    "PLR0913",   # Too many arguments (tests may have many arguments)
+    "PLR0912",   # Too many branches (tests may have many branches)
+    "PLR0915",   # Too many statements (tests may have many statements)
+    "PLR0917",   # Too many arguments on a call (tests may have many calls)
+    "C901",      # Too complex (tests may be complex)
+    "B008",      # Function call as default argument (common in fixtures)
+    "FBT001",    # Boolean default value (common in tests)
+    "FBT002",    # Boolean positional argument (common in tests)
+    "FBT003",    # Boolean positional argument default (common in tests)
+    "A003",      # Shadowing built-ins (common in tests)
+    "COM812",    # Missing trailing comma (not critical in tests)
+    "ISC001",    # Single-line implicit string concatenation (ok in tests)
+    "Q000",      # Unnecessary quote (not critical in tests)
+    "Q001",      # Single/Double quote (not critical in tests)
+    "Q002",      # Unnecessary quote around string literal (not critical in tests)
+    "Q003",      # Avoid using single quotes for module level docstrings (not critical in tests)
+    "ERA001",    # Commented-out code (common in tests for documentation)
+    "G004",      # Use f-string for logging (not critical in tests)
+    "TRY003",    # Avoid bare except (common in tests for catching any exception)
+    "TID252",    # Banned imports (test-specific imports acceptable)
+    "BLE001",    # Blind exception (common in tests)
+    "PTH123",    # Use open instead of Path.open (not critical in tests)
+    "UP045",     # Use dict.get instead of if/else (not critical in tests)
+    "RUF029",    # Prefer f-string (not critical in tests)
+    "EM101",     # Error message must be a string (not critical in tests)
+    "TRY300",    # Avoid using 'raise from' on exceptions (common in tests)
+    "TRY301",    # Avoid using 'raise from' on exceptions (common in tests)
+    "RUF012",    # Class-level mutable default (common in fixtures)
+    "S311",      # Use of insecure function random.choice (acceptable in tests)
+    "B904",      # Use raise from to specify exception cause (common in tests)
 ]
-# Arquivos de configuração de teste
+# Test configuration files
 "**/conftest.py" = [
     "S105",      # Possible hardcoded password
     "S101",      # Use of assert
@@ -201,7 +197,7 @@ ignore = [
     "B904",      # Use raise from to specify exception cause
 ]
 
-# Configurações de formatação
+# Formatting settings
 [format]
 quote-style = "double"
 indent-style = "space"
