@@ -12,6 +12,24 @@ from ..core import JobResult, WorkflowRunner
 console = Console()
 
 
+def _show_command_errors(check_name: str, commands: list) -> None:
+    """Display errors from failed commands.
+
+    Args:
+        check_name: Name of the check (for display)
+        commands: List of command results to check
+
+    """
+    console.print(f"\n[bold red]❌ {check_name} checks failed with errors:[/bold red]")
+    for cmd in commands:
+        if not cmd.success:
+            console.print(f"\n[yellow]Failed command:[/yellow] {cmd.name}")
+            if cmd.error:
+                console.print(f"[red]{cmd.error}[/red]")
+            if cmd.output:
+                console.print(f"[dim]{cmd.output}[/dim]")
+
+
 def run_ruff_check(
     runner: WorkflowRunner,
     target_path: Path | None = None,
@@ -33,11 +51,9 @@ def run_ruff_check(
     console.print(Panel.fit("[bold blue]Ruff Check[/bold blue]", border_style="blue"))
 
     start_time = time.time()
-
-    # Determine target directory
     check_target = str(target_path) if target_path else "src/"
 
-    fix_flag = "--fix" if fix else ""
+    # Build command list
     commands = [
         runner.run_command(
             "Verify Ruff installation",
@@ -46,12 +62,12 @@ def run_ruff_check(
         ),
         runner.run_command(
             "Run Ruff linting",
-            f"uv run ruff check {check_target} {fix_flag}",
+            f"uv run ruff check {check_target} {'--fix' if fix else ''}",
             show_output=show_output,
         ),
         runner.run_command(
-            "Run Ruff format check" if not fix else "Run Ruff format",
-            f"uv run ruff format {'--check' if not fix else ''} {check_target}",
+            "Run Ruff format" if fix else "Run Ruff format check",
+            f"uv run ruff format {'' if fix else '--check'} {check_target}",
             show_output=show_output,
         ),
     ]
@@ -59,16 +75,9 @@ def run_ruff_check(
     duration = time.time() - start_time
     success = all(cmd.success for cmd in commands)
 
-    # Show detailed errors if any command failed
+    # Show errors for failed commands
     if not success:
-        console.print("\n[bold red]❌ Ruff checks failed with errors:[/bold red]")
-        for cmd in commands:
-            if not cmd.success:
-                console.print(f"\n[yellow]Failed command:[/yellow] {cmd.name}")
-                if cmd.error:
-                    console.print(f"[red]{cmd.error}[/red]")
-                if cmd.output:
-                    console.print(f"[dim]{cmd.output}[/dim]")
+        _show_command_errors("Ruff", commands)
 
     return JobResult(name="ruff", success=success, duration=duration, commands=commands)
 

@@ -98,7 +98,7 @@ def check(
     console.print(
         Panel.fit(
             "[bold green]Quality Checks[/bold green]",
-            subtitle="Verify code quality",
+            subtitle="Verify code",
             border_style="green",
         )
     )
