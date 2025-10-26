@@ -1,4 +1,4 @@
-.PHONY: help clean ruff-fix ruff-check ruff-format workflow-check workflow-run workflow-version dry-push push commit-push
+.PHONY: help clean ruff-fix ruff-check ruff-format workflow-check workflow-run workflow-version workflow-release workflow-release-push dry-push push commit-push pyright pyright-install
 
 help:
 	@echo "Available commands:"
@@ -8,11 +8,17 @@ help:
 	@echo "  ruff-check    - Check code formatting and linting (does not modify files)"
 	@echo "  ruff-format   - Check code formatting only (no lint checks)"
 	@echo ""
+	@echo "Type Checking:"
+	@echo "  pyright      - Run Pyright static type checking"
+	@echo "  pyright-install - Install Pyright globally via npm"
+	@echo ""
 	@echo "Workflow Commands:"
-	@echo "  workflow-check    - Quick check (linting + formatting)"
-	@echo "  workflow-run      - Full workflow simulation (tests + release dry-run)"
-	@echo "  workflow-version  - Show current version and next possible versions"
-	@echo "  dry-push          - Run version, check, workflow, and clean in sequence"
+	@echo "  workflow-check        - Quick check (linting + formatting)"
+	@echo "  workflow-run          - Full workflow simulation (tests + release dry-run)"
+	@echo "  workflow-version      - Show current version and next possible versions"
+	@echo "  workflow-release      - Create release (bump version, create tag, no push)"
+	@echo "  workflow-release-push - Create release and push tags to remote"
+	@echo "  dry-push              - Run version, check, workflow, and clean in sequence"
 	@echo ""
 	@echo "Git Commands:"
 	@echo "  push              - Run full validation and push committed changes (allows uncommitted files)"
@@ -34,6 +40,7 @@ clean:
 	find . -name "*.pytest_cache" -delete
 	find . -name "*.typed" -delete
 	find . -name "*.lock" -delete
+	find . -name ".pyright" -type d -exec rm -rf {} + 2>/dev/null || true
 
 
 ruff-fix:
@@ -56,6 +63,12 @@ workflow-run:
 
 workflow-version:
 	uv run python scripts/workflow_dryrun.py version
+
+workflow-release:
+	uv run python scripts/workflow_dryrun.py release
+
+workflow-release-push:
+	uv run python scripts/workflow_dryrun.py release --push-tags
 
 dry-push: workflow-version workflow-check workflow-run clean
 
@@ -96,3 +109,19 @@ commit-push:
 	echo ""; \
 	echo "🚀 Running validations before push..."; \
 	$(MAKE) push
+
+# Pyright Commands
+pyright-install:
+	@echo "📦 Installing Pyright globally via npm..."
+	npm install -g pyright
+	@echo "✅ Pyright installed successfully!"
+
+pyright:
+	@echo "🔍 Running Pyright static type checking..."
+	@if command -v pyright >/dev/null 2>&1; then \
+		pyright; \
+	else \
+		echo "❌ Pyright not found. Install it first with: make pyright-install"; \
+		echo "   Or install via npm: npm install -g pyright"; \
+		exit 1; \
+	fi
