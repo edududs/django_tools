@@ -170,15 +170,14 @@ def push(
     # Run validation if requested
     if validate and not force:
         console.print("\n[bold cyan]Running validation before push...[/bold cyan]\n")
-        validation_success = check_command(
+
+        if not check_command(
             project_root,
             ruff=True,
             pyright=False,
             tests=False,
             fix=False,
-        )
-
-        if not validation_success:
+        ):
             console.print("\n[bold red]Validation failed. Push aborted.[/bold red]")
             console.print("[yellow]Use --no-validate to skip validation (not recommended)[/yellow]")
             raise typer.Exit(1)
