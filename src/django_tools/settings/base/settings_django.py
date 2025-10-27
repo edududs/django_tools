@@ -34,6 +34,12 @@ class DjangoSettingsBaseModel(BaseSettings):
         validation_alias=AliasChoices("ALLOWED_HOSTS", "DJANGO_ALLOWED_HOSTS"),
         description="Allowed hosts",
     )
+    root_urlconf: str = Field(
+        default="core.urls",
+        alias="ROOT_URLCONF",
+        validation_alias=AliasChoices("ROOT_URLCONF", "DJANGO_ROOT_URLCONF"),
+        description="Root URL configuration",
+    )
 
     # ==================================================================================
     # INTERNATIONALIZATION SETTINGS

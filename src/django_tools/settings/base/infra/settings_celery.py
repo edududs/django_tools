@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, TypedDict
+from collections.abc import Callable, Mapping, Sequence
+from datetime import timedelta
+from typing import Any, Literal, TypedDict
 
-from pydantic import Field
+from celery.schedules import crontab, schedule
+from kombu import Queue
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-if TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
-    from datetime import timedelta
-
-    from celery.schedules import crontab, schedule
-    from kombu import Queue
+# Note: timedelta, crontab, and schedule cannot be in TYPE_CHECKING
+# because they're used in type definitions that Pydantic needs to resolve at runtime
 
 
 # ---- Type aliases for task routing ------------------------------------------
@@ -129,10 +129,12 @@ class CelerySettings(BaseSettings):
     # Routing configuration
     task_queues: tuple[Queue, ...] | None = Field(
         default=None,
+        alias="CELERY_TASK_QUEUES",
         description="Tuple of (kombu.Queue) objects Celery will monitor. Should not come from .env.",
     )
     task_routes: TaskRoutes | None = Field(
         default=None,
+        alias="CELERY_TASK_ROUTES",
         description="Maps specific tasks to queues/routers. Should not be loaded from .env if using callables.",
     )
     task_default_queue: str = Field(
@@ -188,6 +190,7 @@ class CelerySettings(BaseSettings):
     # Celery Beat configuration
     beat_schedule: BeatSchedule | None = Field(
         default=None,
+        alias="CELERY_BEAT_SCHEDULE",
         description="Defines scheduled periodic tasks. Should not be read from .env.",
     )
     beat_schedule_filename: str | None = Field(
@@ -207,3 +210,41 @@ class CelerySettings(BaseSettings):
         alias="CELERY_CACHE_BACKEND",
         description="Backend to use for Celery cache, can integrate with Django caching.",
     )
+
+    # ---- Validators ---------------------------------------------------------------
+    @field_validator("task_queues", mode="before")
+    @classmethod
+    def parse_task_queues(cls, value: Any) -> Any:
+        """Converte dicionários em instâncias de Queue do kombu."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            import json
+
+            value = json.loads(value)
+
+        if isinstance(value, (list, tuple)):
+            return tuple[Queue | Any, ...](
+                Queue(name=q["name"], routing_key=q.get("routing_key") or q["name"])
+                if isinstance(q, dict)
+                else q
+                for q in value
+            )
+        return value
+
+    @staticmethod
+    def _parse_json_field(value: Any) -> Any:
+        """Converte string JSON em dicionário."""
+        if value is None:
+            return None
+        if isinstance(value, str):
+            import json
+
+            value = json.loads(value)
+        return value
+
+    @field_validator("task_routes", "beat_schedule", mode="before")
+    @classmethod
+    def parse_json_fields(cls, value: Any) -> Any:
+        """Converte string JSON em dicionário para task_routes e beat_schedule."""
+        return cls._parse_json_field(value)

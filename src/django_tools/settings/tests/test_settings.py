@@ -139,10 +139,13 @@ class TestCelerySettings:
         """Tests JSON fields (task_queues, task_routes, beat_schedule)."""
         settings = CelerySettings(_env_file=str(tmp_env_celery))
 
-        assert settings.task_queues == [
-            {"name": "high", "routing_key": "high"},
-            {"name": "low", "routing_key": "low"},
-        ]
+        # task_queues agora é uma tupla de instâncias de Queue
+        assert settings.task_queues is not None
+        assert len(settings.task_queues) == 2
+        assert settings.task_queues[0].name == "high"
+        assert settings.task_queues[0].routing_key == "high"
+        assert settings.task_queues[1].name == "low"
+        assert settings.task_queues[1].routing_key == "low"
         assert settings.task_routes == {"app.tasks.urgent": {"queue": "high"}}
         assert settings.beat_schedule == {"task1": {"task": "app.tasks.periodic", "schedule": 30.0}}
 
@@ -201,7 +204,9 @@ class TestRedisSettings:
     def test_load_from_fields_only(self, tmp_path: Path):
         """Loads only via individual fields."""
         env_file = tmp_path / ".env"
-        env_file.write_text('REDIS_HOST="myredis.com"\nREDIS_PORT=6380\nREDIS_DB=2\nREDIS_PASSWORD="mypass"')
+        env_file.write_text(
+            'REDIS_HOST="myredis.com"\nREDIS_PORT=6380\nREDIS_DB=2\nREDIS_PASSWORD="mypass"'
+        )
 
         settings = RedisSettings(_env_file=str(env_file))
 
