@@ -28,7 +28,6 @@
   "defineConstant": {
     "DEBUG": true
   },
-  "stubPath": "stubs",
   "reportMissingImports": "warning",
   "reportMissingTypeStubs": "none",
   "reportImportCycles": "warning",

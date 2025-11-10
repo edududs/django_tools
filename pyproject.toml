@@ -16,6 +16,8 @@ dependencies = [
     "dependency-injector>=4.48.2",
     "kombu>=5.5.4",
     "orjson>=3.11.4",
+    "django-stubs>=5.2.7",
+    "django-celery-results>=2.6.0",
 ]
 
 
