@@ -1,4 +1,4 @@
-.PHONY: help clean lint lint-fix test test-all type push push-tags release release-full tag tag-list tag-create version deploy config
+.PHONY: help clean lint lint-fix test test-all type push push-tags release release-full tag tag-list tag-create version deploy config tui
 
 # ==================================================================================
 # Help
@@ -29,6 +29,9 @@ help:
 	@echo "ℹ️  Info:"
 	@echo "  make version      - Show current and next versions"
 	@echo "  make config       - Show workflow configuration"
+	@echo ""
+	@echo "🖥️  TUI:"
+	@echo "  make tui          - Launch Textual TUI interface"
 	@echo ""
 	@echo "🔧 Maintenance:"
 	@echo "  make clean        - Remove cache and build files"
@@ -120,6 +123,14 @@ config:
 ## Complete deployment workflow
 deploy:
 	uv run python -m scripts.workflow.cli deploy
+
+# ==================================================================================
+# TUI
+# ==================================================================================
+
+## Launch Textual TUI interface
+tui:
+	uv run python -m scripts.workflow.tui
 
 # ==================================================================================
 # Maintenance
