@@ -1,7 +1,7 @@
 from django.conf import settings
 
 settings.configure(
-    SECRET_KEY="secret-test",
+    SECRET_KEY="secret-test",  # noqa: S106
     DEBUG=True,
     ALLOWED_HOSTS=["*"],
     INSTALLED_APPS=[

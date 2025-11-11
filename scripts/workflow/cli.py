@@ -7,8 +7,7 @@ import typer
 from .commands import check_command, push_command, tag_command, version_command
 from .domain.project import find_project_root, find_target_path, validate_project_root
 from .infrastructure import ConfigManager
-from .presentation import RichConsole, create_panel, render_config
-from .types import ConfigData
+from .presentation import RichConsole, render_config
 
 app = typer.Typer(
     name="workflow",
@@ -213,13 +212,19 @@ def release(
     validate: bool = typer.Option(
         True, "--validate/--no-validate", help="Run full validation before release"
     ),
+    fix: bool = typer.Option(False, "--fix", help="Auto-fix issues before validation"),
+    push_commits: bool = typer.Option(
+        False, "--push-commits", help="Push commits before creating tag"
+    ),
 ):
     """Create release tag and optionally push.
 
     This command:
-    1. Runs full validation (ruff + pyright + tests)
-    2. Creates a tag for the current version in pyproject.toml
-    3. Optionally pushes the tag to remote
+    1. Optionally auto-fixes issues (--fix)
+    2. Runs full validation (ruff + pyright + tests)
+    3. Optionally pushes commits (--push-commits)
+    4. Creates a tag for the current version in pyproject.toml
+    5. Optionally pushes the tag to remote (--push)
 
     Note: You must manually update the version in pyproject.toml first!
     """
@@ -230,11 +235,27 @@ def release(
     )
 
     project_root = _get_project_root(path)
+    target_path = _get_target_path(use_config=True)
 
-    # Run full validation if requested
+    # Step 1: Auto-fix if requested
+    if fix:
+        console.print("\n[bold cyan]Step 1: Auto-fixing issues...[/bold cyan]\n")
+        fix_success = check_command(
+            project_root,
+            ruff=True,
+            pyright=False,
+            tests=False,
+            fix=True,
+            target_path=target_path,
+        )
+
+        if not fix_success:
+            console.print_warning("\n⚠ Some issues could not be auto-fixed. Continuing...\n")
+
+    # Step 2: Run full validation if requested
     if validate:
-        console.print("\n[bold cyan]Running full validation...[/bold cyan]\n")
-        target_path = _get_target_path(use_config=True)
+        step_num = "2" if fix else "1"
+        console.print(f"\n[bold cyan]Step {step_num}: Running full validation...[/bold cyan]\n")
         validation_success = check_command(
             project_root,
             ruff=True,
@@ -250,16 +271,44 @@ def release(
 
         console.print_success("\n✓ Validation passed!\n")
 
-    # Create tag
+    # Step 3: Push commits if requested
+    if push_commits:
+        step_num = "3" if (fix or validate) else "1"
+        console.print(f"\n[bold cyan]Step {step_num}: Pushing commits...[/bold cyan]\n")
+        push_success = push_command(
+            project_root,
+            tags_only=False,
+            force=False,
+            skip_check=False,
+        )
+
+        if not push_success:
+            console.print_error("\nPush failed. Release aborted.")
+            raise typer.Exit(1)
+
+        console.print_success("\n✓ Commits pushed successfully!\n")
+
+    # Step 4: Create tag
+    step_num = "4" if (fix or validate or push_commits) else "1"
+    console.print(f"\n[bold cyan]Step {step_num}: Creating release tag...[/bold cyan]\n")
     success = tag_command(
         project_root,
         action="create",
         push=push_after,
         force=force,
+        skip_confirm=True,  # Auto-confirm in release workflow
     )
 
     if not success:
         raise typer.Exit(1)
+
+    # Final message
+    console.print("\n" + "=" * 80 + "\n")
+    success_msg = (
+        "[bold green]✓ Release completed successfully![/bold green]\n"
+        "[dim]Tag created and ready for deployment.[/dim]"
+    )
+    console.print_panel(success_msg, style="green")
 
 
 @app.command()

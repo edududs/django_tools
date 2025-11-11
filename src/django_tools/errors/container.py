@@ -43,9 +43,7 @@ class Errors(NormalizeErrorsMixin, RootModel[list[ErrorItem]]):
         if isinstance(message, ErrorItem):
             self.errors.append(message)
         else:
-            self.errors.append(
-                ErrorItem(message=message, field=field, code=code, item=item, meta=meta)
-            )
+            self.errors.append(ErrorItem(message=message, field=field, code=code, item=item, meta=meta))
 
     def extend(self, items: Iterable[str | ErrorItem]) -> None:
         """Add multiple errors to the bag."""
@@ -136,9 +134,6 @@ class Errors(NormalizeErrorsMixin, RootModel[list[ErrorItem]]):
         Returns a format compatible with build_response which normalizes to
         {"description": [...], "data": [...]}.
         """
-        items = [
-            e.model_dump(exclude_unset=exclude_unset, exclude_none=exclude_none)
-            for e in self.errors
-        ]
+        items = [e.model_dump(exclude_unset=exclude_unset, exclude_none=exclude_none) for e in self.errors]
         messages = [i["message"] for i in items]
         return {"description": messages, "data": items}

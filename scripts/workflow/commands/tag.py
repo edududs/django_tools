@@ -16,6 +16,7 @@ def _create_version_tag(
     custom_version: str | None = None,
     push: bool = False,
     force: bool = False,
+    skip_confirm: bool = False,
 ) -> tuple[bool, str]:
     """Create a version tag.
 
@@ -54,9 +55,10 @@ def _create_version_tag(
     tag_name = f"v{tag_version}"
 
     # Confirm tag creation
-    if not typer.confirm(f"\nCreate tag {tag_name}?"):
-        console.print_warning("Tag creation cancelled.")
-        return False, ""
+    if not skip_confirm:
+        if not typer.confirm(f"\nCreate tag {tag_name}?"):
+            console.print_warning("Tag creation cancelled.")
+            return False, ""
 
     # Create tag (with force flag if requested)
     force_flag = "-f" if force else ""
@@ -172,6 +174,7 @@ def tag_command(
     tag_name: str | None = None,
     remote: bool = False,
     limit: int = 10,
+    skip_confirm: bool = False,
 ) -> bool:
     """Execute tag command.
 
@@ -195,6 +198,7 @@ def tag_command(
             custom_version=custom_version,
             push=push,
             force=force,
+            skip_confirm=skip_confirm,
         )
         return success
 

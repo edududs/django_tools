@@ -34,7 +34,7 @@ class NormalizeErrorsMixin:
     """Mixin to add error conversion methods to a class."""
 
     @classmethod
-    def normalize(cls, error: Any, code: int | None = None) -> Errors:
+    def normalize(cls, error: Any, code: int | None = None) -> Errors:  # noqa: PLR0911
         """Converts any error type to Errors (classmethod).
 
         Args:
@@ -73,11 +73,7 @@ class NormalizeErrorsMixin:
 
         # If ApiError -> return exc.errors
         # Check by class name to avoid forward reference
-        if (
-            isinstance(error, Exception)
-            and hasattr(error, "errors")
-            and type(error).__name__ == "ApiError"
-        ):
+        if isinstance(error, Exception) and hasattr(error, "errors") and type(error).__name__ == "ApiError":
             return error.errors  # type: ignore[attr-defined]
 
         # If dict/mapping -> convert
@@ -183,14 +179,10 @@ class NormalizeErrorsMixin:
             meta = error["meta"] if isinstance(error["meta"], dict) else {}
         else:
             meta = {
-                k: v
-                for k, v in error.items()
-                if k not in {"message", "msg", "field", "code", "item", "meta"}
+                k: v for k, v in error.items() if k not in {"message", "msg", "field", "code", "item", "meta"}
             }
 
-        return Errors(
-            root=[ErrorItem(message=message, field=field, code=error_code, item=item, meta=meta)]
-        )
+        return Errors(root=[ErrorItem(message=message, field=field, code=error_code, item=item, meta=meta)])
 
     @classmethod
     def _from_sequence(cls, error: Sequence[Any], code: int | None = None) -> Errors:
@@ -234,9 +226,7 @@ class NormalizeErrorsMixin:
                 payload = extract_http_error_payload(item)
                 error_items.extend(cls.normalize(payload, code=code).errors)
             elif (
-                isinstance(item, Exception)
-                and hasattr(item, "errors")
-                and type(item).__name__ == "ApiError"
+                isinstance(item, Exception) and hasattr(item, "errors") and type(item).__name__ == "ApiError"
             ):
                 # ApiError -> extract internal errors
                 # Check by class name to avoid forward reference
