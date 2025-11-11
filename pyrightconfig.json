@@ -52,7 +52,7 @@
   "reportMissingParameterType": "warning",
   "reportMissingTypeArgument": "warning",
   "reportInvalidTypeVarUse": "warning",
-  "reportCallInDefaultInitializer": "warning",
+  "reportCallInDefaultInitializer": "none",
   "reportUnnecessaryIsInstance": "warning",
   "reportUnnecessaryCast": "warning",
   "reportUnnecessaryComparison": "warning",
