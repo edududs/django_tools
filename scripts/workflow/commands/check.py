@@ -3,35 +3,16 @@
 import time
 from pathlib import Path
 
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
+from ..domain.validation import ValidationPlan, create_validation_plan, should_run_pyright, should_run_ruff, should_run_tests
+from ..infrastructure import execute_command
+from ..presentation import RichConsole, create_panel, render_command_execution, render_validation_summary
+from ..types import CommandResult, ExecutionResult, JobResult
 
-from ..core import JobResult, WorkflowRunner
-
-console = Console()
-
-
-def _show_command_errors(check_name: str, commands: list) -> None:
-    """Display errors from failed commands.
-
-    Args:
-        check_name: Name of the check (for display)
-        commands: List of command results to check
-
-    """
-    console.print(f"\n[bold red]❌ {check_name} checks failed with errors:[/bold red]")
-    for cmd in commands:
-        if not cmd.success:
-            console.print(f"\n[yellow]Failed command:[/yellow] {cmd.name}")
-            if cmd.error:
-                console.print(f"[red]{cmd.error}[/red]")
-            if cmd.output:
-                console.print(f"[dim]{cmd.output}[/dim]")
+console = RichConsole()
 
 
-def run_ruff_check(
-    runner: WorkflowRunner,
+def _run_ruff_job(
+    project_root: Path,
     target_path: Path | None = None,
     fix: bool = False,
     show_output: bool = True,
@@ -39,7 +20,7 @@ def run_ruff_check(
     """Run Ruff linting checks.
 
     Args:
-        runner: WorkflowRunner instance
+        project_root: Project root directory
         target_path: Optional target directory to check (defaults to src/)
         fix: Whether to auto-fix issues
         show_output: Whether to show command output
@@ -48,178 +29,112 @@ def run_ruff_check(
         JobResult with check results
 
     """
-    console.print(Panel.fit("[bold blue]Ruff Check[/bold blue]", border_style="blue"))
+    console.print_panel("[bold blue]Ruff Check[/bold blue]", style="blue")
 
     start_time = time.time()
     check_target = str(target_path) if target_path else "src/"
 
     # Build command list
-    commands = [
-        runner.run_command(
-            "Verify Ruff installation",
-            "uv run ruff --version",
-            show_output=show_output,
-        ),
-        runner.run_command(
-            "Run Ruff linting",
-            f"uv run ruff check {check_target} {'--fix' if fix else ''}",
-            show_output=show_output,
-        ),
-        runner.run_command(
+    command_specs = [
+        ("Verify Ruff installation", "uv run ruff --version"),
+        ("Run Ruff linting", f"uv run ruff check {check_target} {'--fix' if fix else ''}"),
+        (
             "Run Ruff format" if fix else "Run Ruff format check",
             f"uv run ruff format {'' if fix else '--check'} {check_target}",
-            show_output=show_output,
         ),
     ]
+
+    commands: list[CommandResult] = []
+    for name, cmd in command_specs:
+        result = execute_command(cmd, cwd=project_root, stream_output=show_output)
+        render_command_execution(console, name, cmd, result, show_output=show_output)
+
+        commands.append(
+            CommandResult(
+                name=name,
+                command=cmd,
+                success=result.success,
+                duration=result.duration,
+                output=result.stdout,
+                error=result.stderr,
+            )
+        )
 
     duration = time.time() - start_time
     success = all(cmd.success for cmd in commands)
 
-    # Show errors for failed commands
-    if not success:
-        _show_command_errors("Ruff", commands)
-
     return JobResult(name="ruff", success=success, duration=duration, commands=commands)
 
 
-def run_pyright_check(runner: WorkflowRunner, show_output: bool = True) -> JobResult:
+def _run_pyright_job(project_root: Path, show_output: bool = True) -> JobResult:
     """Run Pyright type checking.
 
     Args:
-        runner: WorkflowRunner instance
+        project_root: Project root directory
         show_output: Whether to show command output
 
     Returns:
         JobResult with check results
 
     """
-    console.print(Panel.fit("[bold magenta]Pyright Check[/bold magenta]", border_style="magenta"))
+    console.print_panel("[bold magenta]Pyright Check[/bold magenta]", style="magenta")
 
     start_time = time.time()
 
+    result = execute_command("pyright", cwd=project_root, stream_output=show_output)
+    render_command_execution(console, "Run Pyright type checking", "pyright", result, show_output=show_output)
+
     commands = [
-        runner.run_command(
-            "Run Pyright type checking",
-            "pyright",
-            show_output=show_output,
-        ),
+        CommandResult(
+            name="Run Pyright type checking",
+            command="pyright",
+            success=result.success,
+            duration=result.duration,
+            output=result.stdout,
+            error=result.stderr,
+        )
     ]
 
     duration = time.time() - start_time
-    success = all(cmd.success for cmd in commands)
-
-    # Show detailed errors if any command failed
-    if not success:
-        console.print("\n[bold red]❌ Pyright checks failed with errors:[/bold red]")
-        for cmd in commands:
-            if not cmd.success:
-                console.print(f"\n[yellow]Failed command:[/yellow] {cmd.name}")
-                if cmd.error:
-                    console.print(f"[red]{cmd.error}[/red]")
-                if cmd.output:
-                    console.print(f"[dim]{cmd.output}[/dim]")
+    success = result.success
 
     return JobResult(name="pyright", success=success, duration=duration, commands=commands)
 
 
-def run_tests(runner: WorkflowRunner, show_output: bool = True) -> JobResult:
+def _run_tests_job(project_root: Path, show_output: bool = True) -> JobResult:
     """Run pytest tests with coverage.
 
     Args:
-        runner: WorkflowRunner instance
+        project_root: Project root directory
         show_output: Whether to show command output
 
     Returns:
         JobResult with test results
 
     """
-    console.print(Panel.fit("[bold green]Tests[/bold green]", border_style="green"))
+    console.print_panel("[bold green]Tests[/bold green]", style="green")
 
     start_time = time.time()
 
+    cmd = "uv run pytest src/ -v --cov=src --cov-report=term-missing"
+    result = execute_command(cmd, cwd=project_root, stream_output=show_output)
+    render_command_execution(console, "Run tests with coverage", cmd, result, show_output=show_output)
+
     commands = [
-        runner.run_command(
-            "Run tests with coverage",
-            "uv run pytest src/ -v --cov=src --cov-report=term-missing",
-            show_output=show_output,
-        ),
+        CommandResult(
+            name="Run tests with coverage",
+            command=cmd,
+            success=result.success,
+            duration=result.duration,
+            output=result.stdout,
+            error=result.stderr,
+        )
     ]
 
     duration = time.time() - start_time
-    success = all(cmd.success for cmd in commands)
-
-    # Show detailed errors if any command failed
-    if not success:
-        console.print("\n[bold red]❌ Tests failed with errors:[/bold red]")
-        for cmd in commands:
-            if not cmd.success:
-                console.print(f"\n[yellow]Failed command:[/yellow] {cmd.name}")
-                if cmd.error:
-                    console.print(f"[red]{cmd.error}[/red]")
-                if cmd.output:
-                    console.print(f"[dim]{cmd.output}[/dim]")
+    success = result.success
 
     return JobResult(name="tests", success=success, duration=duration, commands=commands)
-
-
-def generate_summary(results: list[JobResult]) -> Table:
-    """Generate summary table of job results.
-
-    Args:
-        results: List of JobResult instances
-
-    Returns:
-        Rich Table with summary
-
-    """
-    table = Table(title="Quality Check Summary", show_header=True, header_style="bold")
-
-    table.add_column("Check", style="cyan", no_wrap=True)
-    table.add_column("Status", justify="center")
-    table.add_column("Duration", justify="right")
-    table.add_column("Commands", justify="center")
-
-    for job in results:
-        status = "[green]✓ PASSED[/green]" if job.success else "[red]✗ FAILED[/red]"
-        duration = f"{job.duration:.2f}s"
-        total_commands = len(job.commands)
-        successful_commands = sum(1 for cmd in job.commands if cmd.success)
-        success_rate = f"{successful_commands}/{total_commands}"
-
-        table.add_row(job.name.upper(), status, duration, success_rate)
-
-    return table
-
-
-def _generate_error_summary(failed_jobs: list[JobResult], total_duration: float, fix: bool) -> str:
-    """Generate error summary message.
-
-    Args:
-        failed_jobs: List of failed jobs
-        total_duration: Total execution duration
-        fix: Whether auto-fix was enabled
-
-    Returns:
-        Formatted error summary string
-
-    """
-    error_summary = "[bold red]✗ Some checks failed[/bold red]\n\n"
-    error_summary += "[yellow]Failed checks:[/yellow]\n"
-
-    for job in failed_jobs:
-        failed_commands = [cmd for cmd in job.commands if not cmd.success]
-        error_summary += f"  • {job.name.upper()}: {len(failed_commands)} command(s) failed\n"
-
-    error_summary += f"\n[dim]Total duration: {total_duration:.2f}s[/dim]\n\n"
-
-    if fix:
-        error_summary += (
-            "[cyan]💡 Tip: Some issues were auto-fixed. Review changes before committing.[/cyan]"
-        )
-    else:
-        error_summary += "[cyan]💡 Tip: Run with --fix to auto-fix some issues.[/cyan]"
-
-    return error_summary
 
 
 def check_command(
@@ -228,6 +143,7 @@ def check_command(
     pyright: bool = False,
     tests: bool = False,
     fix: bool = False,
+    target_path: Path | None = None,
 ) -> bool:
     """Run quality checks.
 
@@ -237,42 +153,42 @@ def check_command(
         pyright: Run Pyright checks
         tests: Run tests
         fix: Auto-fix issues where possible
+        target_path: Optional target path for validation
 
     Returns:
         True if all checks passed, False otherwise
 
     """
-    runner = WorkflowRunner(project_root)
+    plan = create_validation_plan(ruff=ruff, pyright=pyright, tests=tests)
     results: list[JobResult] = []
 
     # Run Ruff checks
-    if ruff:
-        result = run_ruff_check(runner, fix=fix)
+    if should_run_ruff(plan):
+        result = _run_ruff_job(project_root, target_path=target_path, fix=fix)
         results.append(result)
         if not result.success:
-            console.print("\n[red]Ruff checks failed.[/red]")
+            console.print_error("\nRuff checks failed.")
 
     # Run Pyright checks
-    if pyright:
-        result = run_pyright_check(runner)
+    if should_run_pyright(plan):
+        result = _run_pyright_job(project_root)
         results.append(result)
-
         if not result.success:
-            console.print("\n[yellow]Pyright checks failed (continuing...).[/yellow]")
+            console.print_warning("\nPyright checks failed (continuing...).")
 
     # Run tests
-    if tests:
-        result = run_tests(runner)
+    if should_run_tests(plan):
+        result = _run_tests_job(project_root)
         results.append(result)
         if not result.success:
-            console.print("\n[red]Tests failed.[/red]")
+            console.print_error("\nTests failed.")
 
     # Generate summary
     if not results:
         return True
 
     console.print("\n" + "=" * 80 + "\n")
-    console.print(generate_summary(results))
+    render_validation_summary(console, results)
 
     total_duration = sum(job.duration for job in results)
     all_success = all(job.success for job in results)
@@ -280,17 +196,23 @@ def check_command(
     console.print("\n" + "=" * 80 + "\n")
 
     if all_success:
-        console.print(
-            Panel.fit(
-                f"[bold green]✓ All checks passed![/bold green]\n"
-                f"[dim]Total duration: {total_duration:.2f}s[/dim]",
-                border_style="green",
-            )
-        )
+        success_msg = f"[bold green]✓ All checks passed![/bold green]\n[dim]Total duration: {total_duration:.2f}s[/dim]"
+        console.print_panel(success_msg, style="green")
         return True
 
-    # Show summary of failed checks with suggestions
+    # Show summary of failed checks
     failed_jobs = [job for job in results if not job.success]
-    error_summary = _generate_error_summary(failed_jobs, total_duration, fix)
-    console.print(Panel.fit(error_summary, border_style="red"))
+    error_msg = "[bold red]✗ Some checks failed[/bold red]\n\n"
+    error_msg += "[yellow]Failed checks:[/yellow]\n"
+    for job in failed_jobs:
+        failed_commands = [cmd for cmd in job.commands if not cmd.success]
+        error_msg += f"  • {job.name.upper()}: {len(failed_commands)} command(s) failed\n"
+    error_msg += f"\n[dim]Total duration: {total_duration:.2f}s[/dim]"
+
+    if fix:
+        error_msg += "\n[cyan]💡 Tip: Some issues were auto-fixed. Review changes before committing.[/cyan]"
+    else:
+        error_msg += "\n[cyan]💡 Tip: Run with --fix to auto-fix some issues.[/cyan]"
+
+    console.print_panel(error_msg, style="red")
     return False

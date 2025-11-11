@@ -3,62 +3,64 @@
 from pathlib import Path
 
 import typer
-from rich.console import Console
-from rich.panel import Panel
 
 from .commands import check_command, push_command, tag_command, version_command
-from .config import workflow_config
+from .domain.project import find_project_root, find_target_path, validate_project_root
+from .infrastructure import ConfigManager
+from .presentation import RichConsole, create_panel, render_config
+from .types import ConfigData
 
 app = typer.Typer(
     name="workflow",
     help="Workflow automation for code quality and releases",
     add_completion=False,
 )
-console = Console()
+console = RichConsole()
+
+# Default config file path
+DEFAULT_CONFIG_FILE = Path.home() / ".workflow_config.json"
 
 
-def get_project_root(path: str | None = None, use_config: bool = True) -> Path:
-    """Get project root directory (environment root).
+def _get_project_root(path: str | None = None, use_config: bool = True) -> Path:
+    """Get project root directory.
 
     Args:
         path: Optional custom project root path
         use_config: Whether to use configured environment root
 
     Returns:
-        Project root path (where pyproject.toml is)
+        Project root path
 
     Raises:
         typer.Exit: If pyproject.toml not found
 
     """
+    # If explicit path provided, validate it
     if path:
         project_root = Path(path)
-        if not project_root.exists():
-            console.print(f"[red]Error: Directory {project_root} does not exist[/red]")
-            raise typer.Exit(1)
-        if not (project_root / "pyproject.toml").exists():
-            console.print(f"[red]Error: pyproject.toml not found in {project_root}[/red]")
+        if not validate_project_root(project_root):
+            console.print_error(f"Error: pyproject.toml not found in {project_root}")
             raise typer.Exit(1)
         return project_root
 
     # Check for configured environment root
     if use_config:
-        env_root = workflow_config.get_env_root()
-        if env_root and env_root.exists() and (env_root / "pyproject.toml").exists():
+        config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
+        env_root = config_manager.get_env_root()
+        if env_root and validate_project_root(env_root):
             return env_root
 
-    # Default behavior
-    project_root = Path(__file__).parent.parent.parent
-    if not (project_root / "pyproject.toml").exists():
-        console.print("[red]Error: pyproject.toml not found. Are you in the project root?[/red]")
-        console.print(
-            "[yellow]Tip: Use 'workflow config set-env' to configure an environment.[/yellow]"
-        )
+    # Default behavior: search from current directory
+    project_root = find_project_root()
+    if not project_root:
+        console.print_error("Error: pyproject.toml not found. Are you in the project root?")
+        console.print_warning("Tip: Use 'workflow config set-env' to configure an environment.")
         raise typer.Exit(1)
+
     return project_root
 
 
-def get_target_path(target: str | None = None, use_config: bool = True) -> Path | None:
+def _get_target_path(target: str | None = None, use_config: bool = True) -> Path | None:
     """Get target path for validation.
 
     Args:
@@ -66,19 +68,24 @@ def get_target_path(target: str | None = None, use_config: bool = True) -> Path 
         use_config: Whether to use configured target path
 
     Returns:
-        Target path or None (means use env_root)
+        Target path or None
+
+    Raises:
+        typer.Exit: If target path doesn't exist
 
     """
     if target:
         target_path = Path(target)
         if not target_path.exists():
-            console.print(f"[red]Error: Directory {target_path} does not exist[/red]")
+            console.print_error(f"Error: Directory {target_path} does not exist")
             raise typer.Exit(1)
         return target_path
 
     # Check for configured target path
     if use_config:
-        return workflow_config.get_target_path()
+        config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
+        config = config_manager.load()
+        return find_target_path(config)
 
     return None
 
@@ -95,21 +102,21 @@ def check(
 
     By default, only runs Ruff checks. Use flags to enable other checks.
     """
-    console.print(
-        Panel.fit(
-            "[bold green]Quality Checks[/bold green]",
-            subtitle="Verify code",
-            border_style="green",
-        )
+    console.print_panel(
+        "[bold green]Quality Checks[/bold green]",
+        subtitle="Verify code",
+        style="green",
     )
 
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
+    target_path = _get_target_path(use_config=True)
     success = check_command(
         project_root,
         ruff=ruff,
         pyright=pyright,
         tests=tests,
         fix=fix,
+        target_path=target_path,
     )
 
     if not success:
@@ -127,21 +134,21 @@ def full(
 
     This is the comprehensive check before pushing code.
     """
-    console.print(
-        Panel.fit(
-            "[bold magenta]Full Quality Check[/bold magenta]",
-            subtitle="Complete validation suite",
-            border_style="magenta",
-        )
+    console.print_panel(
+        "[bold magenta]Full Quality Check[/bold magenta]",
+        subtitle="Complete validation suite",
+        style="magenta",
     )
 
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
+    target_path = _get_target_path(use_config=True)
     success = check_command(
         project_root,
         ruff=True,
         pyright=not skip_pyright,
         tests=not skip_tests,
         fix=fix,
+        target_path=target_path,
     )
 
     if not success:
@@ -165,24 +172,26 @@ def push(
     By default, runs quality checks before pushing.
     Use --no-validate to skip validation (not recommended).
     """
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
 
     # Run validation if requested
     if validate and not force:
         console.print("\n[bold cyan]Running validation before push...[/bold cyan]\n")
 
+        target_path = _get_target_path(use_config=True)
         if not check_command(
             project_root,
             ruff=True,
             pyright=False,
             tests=False,
             fix=False,
+            target_path=target_path,
         ):
-            console.print("\n[bold red]Validation failed. Push aborted.[/bold red]")
-            console.print("[yellow]Use --no-validate to skip validation (not recommended)[/yellow]")
+            console.print_error("\nValidation failed. Push aborted.")
+            console.print_warning("Use --no-validate to skip validation (not recommended)")
             raise typer.Exit(1)
 
-        console.print("\n[bold green]✓ Validation passed![/bold green]\n")
+        console.print_success("\n✓ Validation passed!\n")
 
     # Execute push
     success = push_command(
@@ -214,32 +223,32 @@ def release(
 
     Note: You must manually update the version in pyproject.toml first!
     """
-    console.print(
-        Panel.fit(
-            "[bold magenta]Release Process[/bold magenta]",
-            subtitle="Create and push release tag",
-            border_style="magenta",
-        )
+    console.print_panel(
+        "[bold magenta]Release Process[/bold magenta]",
+        subtitle="Create and push release tag",
+        style="magenta",
     )
 
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
 
     # Run full validation if requested
     if validate:
         console.print("\n[bold cyan]Running full validation...[/bold cyan]\n")
+        target_path = _get_target_path(use_config=True)
         validation_success = check_command(
             project_root,
             ruff=True,
             pyright=True,
             tests=True,
             fix=False,
+            target_path=target_path,
         )
 
         if not validation_success:
-            console.print("\n[bold red]Validation failed. Release aborted.[/bold red]")
+            console.print_error("\nValidation failed. Release aborted.")
             raise typer.Exit(1)
 
-        console.print("\n[bold green]✓ Validation passed![/bold green]\n")
+        console.print_success("\n✓ Validation passed!\n")
 
     # Create tag
     success = tag_command(
@@ -272,7 +281,7 @@ def tag(
     - list: List recent tags
     - delete: Delete a tag
     """
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
 
     success = tag_command(
         project_root,
@@ -293,7 +302,7 @@ def version(
     path: str = typer.Option(None, "--path", help="Project root directory"),
 ):
     """Show current version and calculate next versions."""
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
 
     success = version_command(project_root)
 
@@ -311,34 +320,34 @@ def deploy(
     This is the recommended way to deploy code to production.
     It runs all checks and pushes everything in one command.
     """
-    console.print(
-        Panel.fit(
-            "[bold yellow]🚀 Deployment Workflow[/bold yellow]",
-            subtitle="Complete validation and push",
-            border_style="yellow",
-        )
+    console.print_panel(
+        "[bold yellow]🚀 Deployment Workflow[/bold yellow]",
+        subtitle="Complete validation and push",
+        style="yellow",
     )
 
-    project_root = get_project_root(path)
+    project_root = _get_project_root(path)
 
     # Step 1: Full validation
     if not skip_validation:
         console.print("\n[bold cyan]Step 1/3: Running full validation...[/bold cyan]\n")
+        target_path = _get_target_path(use_config=True)
         validation_success = check_command(
             project_root,
             ruff=True,
             pyright=True,
             tests=True,
             fix=False,
+            target_path=target_path,
         )
 
         if not validation_success:
-            console.print("\n[bold red]Validation failed. Deployment aborted.[/bold red]")
+            console.print_error("\nValidation failed. Deployment aborted.")
             raise typer.Exit(1)
 
-        console.print("\n[bold green]✓ Validation passed![/bold green]\n")
+        console.print_success("\n✓ Validation passed!\n")
     else:
-        console.print("\n[yellow]⚠ Skipping validation (not recommended)[/yellow]\n")
+        console.print_warning("\n⚠ Skipping validation (not recommended)\n")
 
     # Step 2: Push commits
     console.print("\n[bold cyan]Step 2/3: Pushing commits...[/bold cyan]\n")
@@ -350,18 +359,16 @@ def deploy(
     )
 
     if not push_success:
-        console.print("\n[bold red]Push failed. Deployment aborted.[/bold red]")
+        console.print_error("\nPush failed. Deployment aborted.")
         raise typer.Exit(1)
 
     # Final message
     console.print("\n" + "=" * 80 + "\n")
-    console.print(
-        Panel.fit(
-            "[bold green]✓ Deployment completed successfully![/bold green]\n"
-            "[dim]All changes have been validated and pushed to remote.[/dim]",
-            border_style="green",
-        )
+    success_msg = (
+        "[bold green]✓ Deployment completed successfully![/bold green]\n"
+        "[dim]All changes have been validated and pushed to remote.[/dim]"
     )
+    console.print_panel(success_msg, style="green")
 
 
 @app.command()
@@ -377,57 +384,49 @@ def config(
     - set-target: Set target path for validation
     - clear: Clear all configuration
     """
+    config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
+
     if action == "show":
-        workflow_config.show_config()
+        config = config_manager.load()
+        render_config(console, config, DEFAULT_CONFIG_FILE)
 
     elif action == "set-env":
         if not path:
-            console.print("[red]Error: --path is required for set-env action[/red]")
-            console.print(
-                "[yellow]Example: workflow config set-env --path /path/to/project[/yellow]"
-            )
+            console.print_error("Error: --path is required for set-env action")
+            console.print_warning("Example: workflow config set-env --path /path/to/project")
             raise typer.Exit(1)
 
         env_root = Path(path)
-        if not env_root.exists():
-            console.print(f"[red]Error: Directory {env_root} does not exist[/red]")
+        if not validate_project_root(env_root):
+            console.print_error(f"Error: pyproject.toml not found in {env_root}")
             raise typer.Exit(1)
 
-        if not (env_root / "pyproject.toml").exists():
-            console.print(f"[red]Error: pyproject.toml not found in {env_root}[/red]")
-            raise typer.Exit(1)
-
-        workflow_config.set_env_root(env_root)
-        console.print(f"[green]✓ Environment root set to: {env_root}[/green]")
-        console.print(
-            "\n[dim]All workflow commands will now use this environment's configuration.[/dim]"
-        )
+        config_manager.set_env_root(env_root)
+        console.print_success(f"✓ Environment root set to: {env_root}")
+        console.print("\n[dim]All workflow commands will now use this environment's configuration.[/dim]")
 
     elif action == "set-target":
         if not path:
-            console.print("[red]Error: --path is required for set-target action[/red]")
-            console.print(
-                "[yellow]Example: workflow config set-target --path /path/to/validate[/yellow]"
-            )
+            console.print_error("Error: --path is required for set-target action")
+            console.print_warning("Example: workflow config set-target --path /path/to/validate")
             raise typer.Exit(1)
 
         target_path = Path(path)
         if not target_path.exists():
-            console.print(f"[red]Error: Directory {target_path} does not exist[/red]")
+            console.print_error(f"Error: Directory {target_path} does not exist")
             raise typer.Exit(1)
 
-        workflow_config.set_target_path(target_path)
-        console.print(f"[green]✓ Target path set to: {target_path}[/green]")
+        config_manager.set_target_path(target_path)
+        console.print_success(f"✓ Target path set to: {target_path}")
         console.print("\n[dim]Validation will be performed on this directory.[/dim]")
 
     elif action == "clear":
-        workflow_config.clear_env_root()
-        workflow_config.clear_target_path()
-        console.print("[green]✓ Configuration cleared[/green]")
+        config_manager.clear()
+        console.print_success("✓ Configuration cleared")
 
     else:
-        console.print(f"[red]Error: Unknown action '{action}'[/red]")
-        console.print("[yellow]Valid actions: show, set-env, set-target, clear[/yellow]")
+        console.print_error(f"Error: Unknown action '{action}'")
+        console.print_warning("Valid actions: show, set-env, set-target, clear")
         raise typer.Exit(1)
 
 

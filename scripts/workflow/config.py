@@ -1,33 +1,41 @@
-"""Configuration management for workflow."""
+"""Configuration management for workflow - backward compatibility wrapper."""
 
-import json
 from pathlib import Path
 
-from rich.console import Console
+from .infrastructure import ConfigManager
+from .presentation import RichConsole, render_config
 
-console = Console()
+# Default config file path
+DEFAULT_CONFIG_FILE = Path.home() / ".workflow_config.json"
+
+console = RichConsole()
 
 
 class WorkflowConfig:
-    """Manage workflow configuration."""
+    """Backward compatibility wrapper for WorkflowConfig.
+
+    This class wraps the new ConfigManager to maintain compatibility
+    with existing code that uses workflow_config global instance.
+    """
 
     def __init__(self):
-        self.config_file = Path.home() / ".workflow_config.json"
+        self.config_file = DEFAULT_CONFIG_FILE
+        self._manager = ConfigManager(self.config_file)
 
     def get_config(self) -> dict:
-        """Get current configuration.
+        """Get current configuration as dict (for backward compatibility).
 
         Returns:
             Configuration dictionary
 
         """
-        if not self.config_file.exists():
-            return {}
-
-        try:
-            return json.loads(self.config_file.read_text())
-        except (json.JSONDecodeError, OSError):
-            return {}
+        config = self._manager.load()
+        result = {}
+        if config.env_root:
+            result["env_root"] = config.env_root
+        if config.target_path:
+            result["target_path"] = config.target_path
+        return result
 
     def get_env_root(self) -> Path | None:
         """Get configured environment root.
@@ -36,11 +44,7 @@ class WorkflowConfig:
             Path to environment root or None if not configured
 
         """
-        config = self.get_config()
-        env_root = config.get("env_root")
-        if env_root:
-            return Path(env_root)
-        return None
+        return self._manager.get_env_root()
 
     def set_env_root(self, env_root: Path) -> None:
         """Set environment root.
@@ -49,19 +53,11 @@ class WorkflowConfig:
             env_root: Path to environment root directory
 
         """
-        config = self.get_config()
-        config["env_root"] = str(env_root.resolve())
-        self.config_file.write_text(json.dumps(config, indent=2))
+        self._manager.set_env_root(env_root)
 
     def clear_env_root(self) -> None:
         """Clear environment root configuration."""
-        config = self.get_config()
-        if "env_root" in config:
-            del config["env_root"]
-        if config:
-            self.config_file.write_text(json.dumps(config, indent=2))
-        else:
-            self.config_file.unlink(missing_ok=True)
+        self._manager.clear_env_root()
 
     def get_target_path(self) -> Path | None:
         """Get configured target path for validation.
@@ -70,11 +66,7 @@ class WorkflowConfig:
             Path to target directory or None if not configured
 
         """
-        config = self.get_config()
-        target_path = config.get("target_path")
-        if target_path:
-            return Path(target_path)
-        return None
+        return self._manager.get_target_path()
 
     def set_target_path(self, target_path: Path) -> None:
         """Set target path for validation.
@@ -83,43 +75,17 @@ class WorkflowConfig:
             target_path: Path to target directory
 
         """
-        config = self.get_config()
-        config["target_path"] = str(target_path.resolve())
-        self.config_file.write_text(json.dumps(config, indent=2))
+        self._manager.set_target_path(target_path)
 
     def clear_target_path(self) -> None:
         """Clear target path configuration."""
-        config = self.get_config()
-        if "target_path" in config:
-            del config["target_path"]
-        if config:
-            self.config_file.write_text(json.dumps(config, indent=2))
-        else:
-            self.config_file.unlink(missing_ok=True)
+        self._manager.clear_target_path()
 
     def show_config(self) -> None:
         """Display current configuration."""
-        config = self.get_config()
-
-        if not config:
-            console.print("[yellow]No configuration found.[/yellow]")
-            console.print("\n[dim]Use 'workflow config set-env' to configure an environment.[/dim]")
-            return
-
-        console.print("[bold cyan]Current Configuration:[/bold cyan]\n")
-
-        if "env_root" in config:
-            console.print(f"[green]Environment Root:[/green] {config['env_root']}")
-        else:
-            console.print("[dim]Environment Root: Not configured[/dim]")
-
-        if "target_path" in config:
-            console.print(f"[green]Target Path:[/green] {config['target_path']}")
-        else:
-            console.print("[dim]Target Path: Not configured[/dim]")
-
-        console.print(f"\n[dim]Config file: {self.config_file}[/dim]")
+        config = self._manager.load()
+        render_config(console, config, self.config_file)
 
 
-# Global config instance
+# Global config instance for backward compatibility
 workflow_config = WorkflowConfig()

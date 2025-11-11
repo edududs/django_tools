@@ -1,95 +1,95 @@
-# Error System - Estrutura Modular
+# Error System - Modular Structure
 
-Este módulo fornece um sistema de erros padronizado e reutilizável para APIs Django/Ninja, projetado para ser **desacoplado do Django** e funcionar standalone quando necessário.
+This module provides a standardized and reusable error system for Django/Ninja APIs. It is **decoupled from Django** and can work standalone if necessary.
 
-## Visão Geral
+## Overview
 
-O sistema de erros permite normalizar, manipular e serializar erros de diferentes fontes (strings, dicionários, exceções, ValidationError, HttpError, etc.) em uma estrutura padronizada.
+The error system allows normalization, manipulation, and serialization of errors from multiple sources (strings, dicts, exceptions, ValidationError, HttpError, etc.) into a unified structure.
 
-## Arquitetura
+## Architecture
 
-A estrutura foi projetada para **evitar circular imports** e manter o código **desacoplado do Django/Ninja** até o momento de uso real.
+The structure is designed to **avoid circular imports** and keep the code **decoupled from Django/Ninja** until actual usage.
 
-### Hierarquia de Dependências
+### Dependency Hierarchy
 
 ```text
-Camada 0: types.py          → ErrorItem (tipos básicos, sem dependências internas)
-Camada 1: mixins.py         → NormalizeErrorsMixin (lógica de conversão)
-Camada 2: container.py      → Errors (container + operações)
-Camada 3: exceptions.py     → ApiError (exceções customizadas)
-Camada 3: utils.py          → Funções auxiliares (serialize, extract, etc.)
-Camada 4: __init__.py       → API pública (ErrorItem, Errors, ApiError, to_errors)
+Layer 0: types.py          → ErrorItem (basic types, no internal dependencies)
+Layer 1: mixins.py         → NormalizeErrorsMixin (conversion logic)
+Layer 2: container.py      → Errors (container + operations)
+Layer 3: exceptions.py     → ApiError (custom exceptions)
+Layer 3: utils.py          → Utility functions (serialize, extract, etc.)
+Layer 4: __init__.py       → Public API (ErrorItem, Errors, ApiError, to_errors)
 ```
 
-**Regra fundamental**: Cada módulo só importa de camadas inferiores, evitando dependências circulares.
+**Fundamental rule**: Each module only imports from lower layers, avoiding circular dependencies.
 
-### Imports Lazy e Opcionais
+### Lazy and Optional Imports
 
-Para evitar forçar a inicialização do Django quando não necessário, usamos:
+To avoid initializing Django unnecessarily, we use:
 
-1. **Duck typing** para verificar tipos Ninja sem importá-los:
+1. **Duck typing** to check Ninja types without importing them:
 
    ```python
    def _is_http_error(obj: Any) -> bool:
        return type(obj).__name__ == "HttpError" and type(obj).__module__ == "ninja.errors"
    ```
 
-2. **Imports dentro de funções** quando necessário:
+2. **Imports inside functions** when needed:
 
    ```python
    def normalize(cls, error: Any, code: int | None = None):
-       from .container import Errors  # Import tardio evita ciclo
+       from .container import Errors  # Late import avoids cycles
        ...
    ```
 
-3. **TYPE_CHECKING** para type hints sem imports em runtime:
+3. **TYPE_CHECKING** for type hints without actual runtime imports:
 
    ```python
    if TYPE_CHECKING:
        from .container import Errors
    ```
 
-## Estrutura de Arquivos
+## File Structure
 
 ```text
 src/django_tools/errors/
-├── __init__.py          # API pública (ErrorItem, Errors, ApiError, to_errors)
-├── types.py            # ErrorItem (tipo básico, sem dependências internas)
-├── mixins.py           # NormalizeErrorsMixin (lógica de conversão de erros)
-├── container.py        # Errors (container com operações: add, filter, merge, etc.)
-├── exceptions.py        # ApiError (exceção base para APIs)
-├── utils.py            # Funções auxiliares (serialize_error_to_payload, extract_http_error_payload, etc.)
-└── tests/              # Testes unitários (98 testes)
+├── __init__.py          # Public API (ErrorItem, Errors, ApiError, to_errors)
+├── types.py             # ErrorItem (basic type, no internal dependencies)
+├── mixins.py            # NormalizeErrorsMixin (error conversion logic)
+├── container.py         # Errors (container with operations: add, filter, merge, etc.)
+├── exceptions.py        # ApiError (base exception for APIs)
+├── utils.py             # Helper functions (serialize_error_to_payload, extract_http_error_payload, etc.)
+└── tests/               # Unit tests (98 tests)
     ├── __init__.py
     └── test_errors.py
 ```
 
-## Uso
+## Usage
 
-### Import básico (sem Django)
+### Basic Import (standalone, no Django required)
 
-O módulo funciona completamente standalone, sem necessidade de inicializar Django:
+The module works completely standalone, without initializing Django:
 
 ```python
 from django_tools.errors import ErrorItem, Errors, ApiError, to_errors
 
-# Conversão direta de string
+# Convert a string
 errors = to_errors("simple error")
 print(errors.messages)  # ['simple error']
 
-# Criação manual de ErrorItem
-item = ErrorItem(message="Campo inválido", field="email", code=400)
-print(item.message)  # 'Campo inválido'
+# Manually create an ErrorItem
+item = ErrorItem(message="Invalid field", field="email", code=400)
+print(item.message)  # 'Invalid field'
 
-# Container Errors com operações
+# Errors container with operations
 errors = Errors(root=[])
-errors.add("Erro 1")
-errors.add("Erro 2", field="name", code=400)
+errors.add("Error 1")
+errors.add("Error 2", field="name", code=400)
 print(len(errors))  # 2
-print(errors.messages)  # ['Erro 1', 'Erro 2']
+print(errors.messages)  # ['Error 1', 'Error 2']
 ```
 
-### Normalização de diferentes tipos
+### Normalizing Different Error Types
 
 ```python
 from django_tools.errors import Errors, to_errors
@@ -98,15 +98,15 @@ from django_tools.errors import Errors, to_errors
 errors = Errors.normalize("error")
 print(errors.messages)  # ['error']
 
-# Lista de strings
+# List of strings
 errors = Errors.normalize(["error1", "error2"])
 print(len(errors))  # 2
 
-# Dicionário
+# Dictionary
 errors = Errors.normalize({"message": "error", "field": "email", "code": 400})
 print(errors.errors[0].field)  # 'email'
 
-# Lista heterogênea
+# Heterogeneous list
 errors = Errors.normalize([
     "string error",
     {"message": "dict error", "field": "name"},
@@ -116,7 +116,7 @@ errors = Errors.normalize([
 print(len(errors))  # 4
 ```
 
-### Normalização com ValidationError (Pydantic)
+### Normalizing with ValidationError (Pydantic)
 
 ```python
 from pydantic import BaseModel, ValidationError
@@ -135,144 +135,144 @@ except ValidationError as e:
     print(errors.errors[0].field)  # 'age'
 ```
 
-### Operações no container Errors
+### Errors Container Operations
 
 ```python
 from django_tools.errors import Errors, ErrorItem
 
 errors = Errors(root=[])
-errors.add("Erro 1", field="email", code=400)
-errors.add("Erro 2", field="name", code=400)
-errors.add("Erro 3", field="email", code=500)
+errors.add("Error 1", field="email", code=400)
+errors.add("Error 2", field="name", code=400)
+errors.add("Error 3", field="email", code=500)
 
-# Filtrar por campo
+# Filter by field
 email_errors = errors.filter_by(field="email")
 print(len(email_errors))  # 2
 
-# Filtrar por código
+# Filter by code
 code_400_errors = errors.filter_by(code=400)
 print(len(code_400_errors))  # 2
 
-# Normalizar códigos
+# Normalize codes
 errors.normalize_codes(default_code=400)
 print(all(e.code == 400 for e in errors))  # True
 
-# Operações de conjunto
+# Set operations
 errors1 = Errors(root=[ErrorItem(message="e1")])
 errors2 = Errors(root=[ErrorItem(message="e2")])
 combined = errors1 + errors2
 print(len(combined))  # 2
 ```
 
-### Exceções customizadas (ApiError)
+### Custom Exceptions (ApiError)
 
 ```python
 from django_tools.errors import ApiError, Errors
 
-# Criar exceção com string
-raise ApiError("Erro de negócio")
+# Raise exception with string
+raise ApiError("Business error")
 
-# Criar exceção com dicionário
-raise ApiError({"message": "Erro", "field": "email"}, code=400)
+# Raise exception with dictionary
+raise ApiError({"message": "Error", "field": "email"}, code=400)
 
-# Criar exceção com Errors
-errors = Errors(root=[ErrorItem(message="Erro", field="email")])
+# Raise exception with Errors
+errors = Errors(root=[ErrorItem(message="Error", field="email")])
 raise ApiError(errors)
 
-# Exceção customizada
+# Custom exception
 class UserError(ApiError):
     pass
 
-raise UserError("Usuário inválido")
+raise UserError("Invalid user")
 ```
 
-### Com Django/Ninja (import lazy)
+### With Django/Ninja (lazy import)
 
-O Ninja só é importado quando realmente necessário, evitando forçar a inicialização do Django:
+Ninja is only imported when truly needed, so Django initialization is avoided if not required:
 
 ```python
 from django_tools.errors import Errors
 
-# Em um endpoint Django Ninja
+# In a Django Ninja endpoint
 from ninja.errors import HttpError
 
 try:
     raise HttpError(400, {"message": "error"})
 except HttpError as e:
-    # Ninja é importado aqui, não no import do módulo
+    # Ninja is only imported here, not at module import time
     errors = Errors.normalize(e)
     print(errors.messages)
 ```
 
-## Testes
+## Tests
 
-O módulo possui cobertura completa de testes (98 testes) cobrindo:
+The module has full test coverage (98 tests) for:
 
-- Criação e manipulação de `ErrorItem`
-- Operações do container `Errors` (add, filter, merge, filter_by)
-- Normalização de todos os tipos suportados (string, dict, list, Exception, ValidationError, HttpError)
-- Exceções `ApiError` e herança
-- Função `to_errors()` e seus aliases
-- Casos extremos e edge cases
+- Creating and manipulating `ErrorItem`
+- Errors container operations (add, filter, merge, filter_by)
+- Normalizing all supported types (string, dict, list, Exception, ValidationError, HttpError)
+- `ApiError` and inheritance
+- The `to_errors()` function and its aliases
+- Edge cases
 
-Para rodar os testes:
+To run tests:
 
 ```bash
 pytest src/django_tools/errors/tests/test_errors.py -v
 ```
 
-## Benefícios
+## Benefits
 
-✅ **Sem circular imports**: hierarquia clara de dependências em camadas  
-✅ **Desacoplado do Django**: funciona completamente standalone  
-✅ **Imports opcionais**: Ninja/Django só quando necessário (lazy imports)  
-✅ **Testável**: 98 testes passando com cobertura completa  
-✅ **Type-safe**: tipos completos com duck typing e TYPE_CHECKING  
-✅ **Extensível**: fácil adicionar novos conversores de erro  
-✅ **Performático**: imports tardios evitam overhead desnecessário  
-✅ **Reutilizável**: pode ser usado em qualquer projeto Python, não apenas Django  
+✅ **No circular imports**: clear, layered dependency hierarchy  
+✅ **Django decoupled**: fully standalone operation  
+✅ **Optional imports**: Ninja/Django only loaded when needed (lazy)  
+✅ **Well-tested**: 98 fully passing tests  
+✅ **Type-safe**: complete typing using duck typing and TYPE_CHECKING  
+✅ **Extensible**: easy to add new error converters  
+✅ **Performant**: lazy imports avoid unnecessary overhead  
+✅ **Reusable**: can be used in any Python project, not just Django apps  
 
-## Warnings do Linter
+## Linter Warnings
 
-Os warnings de "Cycle detected" são **esperados e resolvidos em runtime** através dos imports tardios dentro das funções. Isso é uma prática comum e aceitável para resolver dependências circulares em Python quando a hierarquia de camadas não é suficiente.
+"Cycle detected" linter warnings are **expected and resolved at runtime** by using late imports inside functions. This is a common and acceptable pattern in Python when layer hierarchy alone isn't enough to resolve cycles.
 
-O código usa `# pyright: ignore[reportImportCycles]` em `container.py` para documentar que o ciclo é intencional e resolvido em runtime.
+The code uses `# pyright: reportImportCycles=false` in `container.py` to document that the cycle is intentional and handled at runtime.
 
-## Componentes Principais
+## Main Components
 
 ### ErrorItem
 
-Estrutura básica de um erro com campos opcionais:
+Basic error structure with optional fields:
 
-- `message`: Mensagem do erro (obrigatório)
-- `field`: Campo relacionado (opcional)
-- `code`: Código do erro (opcional)
-- `item`: Índice/identificador (opcional)
-- `meta`: Metadados adicionais (opcional)
+- `message`: Error message (required)
+- `field`: Related field (optional)
+- `code`: Error code (optional)
+- `item`: Index/identifier (optional)
+- `meta`: Extra metadata (optional)
 
 ### Errors
 
-Container rico com operações:
+A rich container with operations:
 
-- `normalize()`: Converte qualquer tipo de erro para Errors
-- `add()`: Adiciona um erro ao container
-- `filter_by()`: Filtra erros por critérios
-- `normalize_codes()`: Normaliza códigos de erro
-- `merge()`: Mescla outro Errors
-- `to_dict()`: Serializa para dicionário
+- `normalize()`: Convert any kind of error into Errors
+- `add()`: Add an error to the container
+- `filter_by()`: Filter errors by criteria
+- `normalize_codes()`: Normalize error codes
+- `merge()`: Merge with another Errors container
+- `to_dict()`: Serialize errors as a dictionary
 
 ### ApiError
 
-Exceção base que carrega Errors internamente:
+Base exception that holds Errors internally:
 
-- Aceita qualquer tipo de erro e normaliza automaticamente
-- Pode ser estendida para exceções de domínio específico
-- Propriedade `errors` retorna o container Errors
-- Propriedade `message` retorna a primeira mensagem ou nome da classe
+- Accepts any error type and normalizes it automatically
+- Can be subclassed for domain-specific exceptions
+- `.errors` property returns the Errors container
+- `.message` property returns the first message or the class name
 
 ### to_errors()
 
-Função de conveniência que é um alias para `Errors.normalize()`:
+Convenience function which is an alias for `Errors.normalize()`:
 
-- Interface simplificada para conversão direta
-- Útil para casos simples onde não precisa manipular o container
+- Simplified interface for direct conversion
+- Useful for simple cases where container manipulation isn't needed

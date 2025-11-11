@@ -1,6 +1,7 @@
 """Core workflow components."""
 
-from .models import CommandResult, JobResult
+# Import from types for backward compatibility
+from ..types import CommandResult, JobResult
 from .runner import WorkflowRunner
 
 __all__ = [

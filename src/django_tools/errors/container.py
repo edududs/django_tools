@@ -1,4 +1,4 @@
-# pyright: ignore[reportImportCycles]
+# pyright: reportImportCycles=false
 
 """Error System - Container.
 
