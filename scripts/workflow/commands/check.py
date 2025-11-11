@@ -3,12 +3,7 @@
 import time
 from pathlib import Path
 
-from ..domain.validation import (
-    create_validation_plan,
-    should_run_pyright,
-    should_run_ruff,
-    should_run_tests,
-)
+from ..domain.validation import create_validation_plan
 from ..infrastructure import execute_command
 from ..presentation import (
     RichConsole,
@@ -177,21 +172,21 @@ def check_command(
     results: list[JobResult] = []
 
     # Run Ruff checks
-    if should_run_ruff(plan):
+    if plan.ruff:
         result = _run_ruff_job(project_root, target_path=target_path, fix=fix)
         results.append(result)
         if not result.success:
             console.print_error("\nRuff checks failed.")
 
     # Run Pyright checks
-    if should_run_pyright(plan):
+    if plan.pyright:
         result = _run_pyright_job(project_root)
         results.append(result)
         if not result.success:
             console.print_warning("\nPyright checks failed (continuing...).")
 
     # Run tests
-    if should_run_tests(plan):
+    if plan.tests:
         result = _run_tests_job(project_root)
         results.append(result)
         if not result.success:

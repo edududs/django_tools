@@ -4,7 +4,7 @@ from pathlib import Path
 
 import typer
 
-from ..domain.git_operations import can_force_push, should_push_commits, should_push_tags
+from ..domain.git_operations import should_push_commits, should_push_tags
 from ..infrastructure import (
     count_commits_to_push,
     execute_command,
@@ -38,7 +38,7 @@ def _push_commits(project_root: Path, force: bool = False, check_first: bool = T
         branch = get_current_branch()
         commits_count = count_commits_to_push(branch)
 
-        if not should_push_commits(branch, commits_count, force):
+        if not should_push_commits(commits_count, force):
             console.print_warning("No commits to push. Branch is up to date.")
             return True
 
@@ -115,7 +115,7 @@ def push_command(
     if force and not tags_only:
         console.print_warning("⚠ Warning: Force push enabled!")
         has_uncommitted = has_uncommitted_changes()
-        if not can_force_push(force, has_uncommitted):
+        if has_uncommitted:
             console.print_warning("Cannot force push with uncommitted changes.")
             return False
 

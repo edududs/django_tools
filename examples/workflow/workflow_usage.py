@@ -5,9 +5,9 @@ showing the complete command execution flow.
 
 Key Concepts:
 - Direct function calls: No complex DI, just import and call
-- WorkflowRunner: Execute shell commands with tracking
+- Command execution: Execute shell commands via infrastructure layer
 - Command layer: High-level commands (check, push, tag, version)
-- Utils: Pure functions for Git operations
+- Infrastructure: Pure functions for Git operations and I/O
 - Configuration: Persistent settings management
 """
 
@@ -21,13 +21,14 @@ from rich.panel import Panel
 from rich.tree import Tree
 
 from scripts.workflow.config import workflow_config
-from scripts.workflow.core import CommandResult, WorkflowRunner
-from scripts.workflow.utils import (
+from scripts.workflow.infrastructure import (
     count_commits_to_push,
+    execute_command,
     get_current_branch,
     get_current_version,
     get_unpushed_tags,
 )
+from scripts.workflow.types import ExecutionResult
 
 app = typer.Typer()
 console = Console()
@@ -52,34 +53,35 @@ def demonstrate_project_root():
     return project_root
 
 
-def demonstrate_workflow_runner(project_root: Path):
-    """Demonstrate WorkflowRunner for executing commands."""
+def demonstrate_command_execution(project_root: Path):
+    """Demonstrate command execution via infrastructure layer."""
     console.print("\n")
-    console.print(Panel.fit("⚙️ WorkflowRunner", style="bold magenta"))
-
-    runner = WorkflowRunner(project_root)
+    console.print(Panel.fit("⚙️ Command Execution", style="bold magenta"))
 
     console.print("\n[bold]1. Execute a single command:[/bold]")
-    result: CommandResult = runner.run_command(
-        "Check Python version",
+    result: ExecutionResult = execute_command(
         "python --version",
-        show_output=True,
+        cwd=project_root,
     )
 
     console.print(f"   [green]✓[/green] Success: {result.success}")
     console.print(f"   [green]✓[/green] Duration: {result.duration:.2f}s")
+    if result.stdout:
+        console.print(f"   [green]✓[/green] Output: {result.stdout.strip()}")
 
-    console.print("\n[bold]2. Track multiple commands:[/bold]")
+    console.print("\n[bold]2. Execute multiple commands:[/bold]")
     commands = [
-        runner.run_command("List files", "ls -la", show_output=False),
-        runner.run_command("Check git status", "git status", show_output=False),
+        execute_command("ls -la", cwd=project_root),
+        execute_command("git status", cwd=project_root),
     ]
 
     success_rate = sum(1 for cmd in commands if cmd.success) / len(commands) * 100
     console.print(f"   [green]✓[/green] Success rate: {success_rate:.0f}%")
 
-    console.print("\n[dim]→ WorkflowRunner tracks all command execution details[/dim]")
-    console.print("[dim]→ Returns CommandResult with success, duration, output, error[/dim]")
+    console.print(
+        "\n[dim]→ execute_command returns ExecutionResult with success, duration, output, error[/dim]"
+    )
+    console.print("[dim]→ Pure function - no side effects, easy to test[/dim]")
 
 
 def demonstrate_commands(project_root: Path):  # noqa: ARG001
@@ -142,7 +144,8 @@ def demonstrate_git_utils(project_root: Path):
 
     # Count commits to push
     try:
-        commits = count_commits_to_push()
+        branch = get_current_branch()
+        commits = count_commits_to_push(branch)
         console.print(f"   [green]✓[/green] Commits to push: [cyan]{commits}[/cyan]")
     except RuntimeError as e:
         console.print(f"   [red]✗[/red] Could not count commits: {e}")
@@ -180,10 +183,10 @@ def demonstrate_configuration():
     console.print("[dim]→ Use 'workflow config set-env' to configure[/dim]")
 
 
-def demonstrate_command_execution(project_root: Path):  # noqa: ARG001
-    """Demonstrate executing a real command."""
+def demonstrate_high_level_commands(project_root: Path):  # noqa: ARG001
+    """Demonstrate high-level workflow commands."""
     console.print("\n")
-    console.print(Panel.fit("🚀 Command Execution Example", style="bold magenta"))
+    console.print(Panel.fit("🚀 High-Level Commands Example", style="bold magenta"))
 
     console.print("\n[bold]Example: Running version command[/bold]")
     console.print("[dim]This would show current version and next versions[/dim]\n")
@@ -204,11 +207,11 @@ def run_all_examples():
     console.print(Panel.fit("📚 Workflow Usage Examples", style="bold"))
 
     project_root = demonstrate_project_root()
-    demonstrate_workflow_runner(project_root)
+    demonstrate_command_execution(project_root)
     demonstrate_commands(project_root)
     demonstrate_git_utils(project_root)
     demonstrate_configuration()
-    demonstrate_command_execution(project_root)
+    demonstrate_high_level_commands(project_root)
 
     console.print("\n")
     console.print(Panel.fit("📋 Summary", style="bold green"))
@@ -218,7 +221,7 @@ def run_all_examples():
     summary.add("[green]✓[/green] Testable: Functions accept parameters")
     summary.add("[green]✓[/green] Type-safe: Full type hints throughout")
     summary.add("[green]✓[/green] Flexible: Use CLI or call directly")
-    summary.add("[green]✓[/green] Clear: Separate layers (CLI, commands, core, utils)")
+    summary.add("[green]✓[/green] Clear: Separate layers (CLI, commands, infrastructure, domain)")
 
     console.print(summary)
 
