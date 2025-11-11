@@ -22,12 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `check`: Ruff linting and formatting validation
   - `full`: Complete validation (Ruff + Pyright + Tests)
   - Support for `--fix` flag to auto-fix issues
+  - Support for `--unsafe-fixes` flag in Ruff checks (enables unsafe auto-fixes)
   - Support for `--path` flag to specify custom project root
   - Configurable validation targets
 
 - **Git Operations**
   - `push`: Push commits and tags with automatic validation
   - `release`: Create release tags with full validation
+  - `release --fix --push-commits --push`: Complete release workflow (fix + validate + push + tag)
   - `tag`: Manage git tags (create, list, delete)
   - `version`: Show current and next version information
   - `deploy`: Complete deployment workflow
@@ -39,6 +41,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `config clear`: Clear all configuration
   - Persistent configuration across sessions
 
+- **Layered Architecture**
+  - `types/`: Data models and type definitions (CommandResult, JobResult, ConfigData)
+  - `domain/`: Business logic layer (project, version, validation, git_operations)
+  - `infrastructure/`: I/O layer (command_executor, git_client, config_manager, file_system)
+  - `presentation/`: UI layer (console, formatters, renderers)
+  - `commands/`: Orchestration layer (check, push, tag, version)
+  - Clear separation of concerns and dependency hierarchy
+
+- **Makefile Improvements**
+  - Short, intuitive commands: `make lint`, `make test`, `make push`, `make release-full`
+  - `make release-full`: Complete release workflow in one command
+  - Better help documentation with emojis and categories
+  - Simplified command structure
+
 ### Changed
 
 - **CI/CD Simplification**
@@ -47,28 +63,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Releases are now manual via local workflow commands
   
 - **Makefile Enhancement**
-  - Dynamic argument passing using `$(filter-out $@,$(MAKECMDGOALS))`
-  - Catch-all target `%:` to allow flexible argument passing
-  - Simplified command structure with shortcuts
-  - Better help documentation with examples
+  - Completely redesigned with shorter, more intuitive commands
+  - Commands organized by category (Quality Checks, Git Operations, Release, Tags, Info)
+  - `make lint`, `make lint-fix`, `make test`, `make test-all` for quality checks
+  - `make release-full` for complete release workflow
+  - Better help output with examples
 
-- **Code Quality**
-  - Modular architecture with clear separation of concerns
-  - Core components: `models.py`, `runner.py`, `config.py`
-  - Command modules: `check.py`, `push.py`, `tag.py`, `version.py`
-  - Utility functions for Git operations
+- **Workflow Architecture Refactoring**
+  - Complete refactoring into 6-layer architecture (types, domain, infrastructure, presentation, commands, cli)
+  - Extracted business logic from CLI into domain layer
+  - Separated I/O operations into infrastructure layer
+  - Centralized presentation logic in presentation layer
+  - Improved testability and maintainability
+  - Backward compatibility maintained through wrapper modules
+
+- **Ruff Configuration**
+  - Added `PLR0911` (Too many return statements) to global ignore list
+  - Improved handling of warnings that cannot be auto-fixed
 
 ### Removed
 
 - `workflow_dryrun.py` (replaced by modular `workflow` package)
 - Automatic version bumping in CI/CD
 - Automatic tag creation in CI/CD
+- Legacy Makefile commands (replaced by shorter, intuitive alternatives)
 
 ### Fixed
 
 - Ruff linting complexity issues (refactored `check_command`)
 - Error output now shows specific failed commands
 - Better error messages with helpful tips
+- PLR0911 warning no longer blocks release workflow
+- Circular import issues resolved through layered architecture
 
 ## [0.2.0] - 2024-12-19
 
