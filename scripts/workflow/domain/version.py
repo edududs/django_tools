@@ -1,6 +1,9 @@
+# pyright: reportAttributeAccessIssue=false
 """Version management - pure version logic."""
 
 import re
+
+from ..types import BumpType
 
 
 def get_version_from_pyproject(content: str) -> str:
@@ -44,7 +47,7 @@ def parse_version(version: str) -> tuple[int, int, int]:
         raise ValueError(msg)
 
     try:
-        return tuple(map(int, version_parts))
+        return tuple(map(int, version_parts))  # pyright: ignore[reportReturnType]
     except ValueError as e:
         msg = f"Invalid version format: {version}"
         raise ValueError(msg) from e
@@ -67,12 +70,12 @@ def validate_version_format(version: str) -> bool:
         return False
 
 
-def calculate_next_version(current_version: str, bump_type: str) -> str:
+def calculate_next_version(current_version: str, bump_type: str | BumpType) -> str:
     """Calculate next version based on bump type.
 
     Args:
         current_version: Current version (e.g., "0.3.3")
-        bump_type: Type of bump ("patch", "minor", "major")
+        bump_type: Type of bump ("patch", "minor", "major" or BumpType enum)
 
     Returns:
         Next version string
@@ -83,13 +86,16 @@ def calculate_next_version(current_version: str, bump_type: str) -> str:
     """
     major, minor, patch = parse_version(current_version)
 
-    if bump_type == "patch":
-        return f"{major}.{minor}.{patch + 1}"
-    if bump_type == "minor":
-        return f"{major}.{minor + 1}.0"
-    if bump_type == "major":
-        return f"{major + 1}.0.0"
+    # Normalize to string for comparison
+    bump_str = bump_type.value if isinstance(bump_type, BumpType) else bump_type
 
-    msg = f"Invalid bump type: {bump_type}. Must be 'patch', 'minor', or 'major'"
-    raise ValueError(msg)
-
+    match bump_str:
+        case BumpType.PATCH.value:
+            return f"{major}.{minor}.{patch + 1}"
+        case BumpType.MINOR.value:
+            return f"{major}.{minor + 1}.0"
+        case BumpType.MAJOR.value:
+            return f"{major + 1}.0.0"
+        case _:
+            msg = f"Invalid bump type: {bump_type}. Must be 'patch', 'minor', or 'major'"
+            raise ValueError(msg)

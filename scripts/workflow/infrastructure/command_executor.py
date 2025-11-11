@@ -1,10 +1,19 @@
 """Command execution - pure subprocess execution without presentation."""
 
 import subprocess
-import time
+from contextlib import contextmanager
 from pathlib import Path
 
 from ..types import ExecutionResult
+
+
+@contextmanager
+def _measure_time():
+    """Context manager for measuring execution time."""
+    from time import perf_counter
+
+    start = perf_counter()
+    yield lambda: perf_counter() - start
 
 
 def execute_command(
@@ -28,53 +37,48 @@ def execute_command(
         ExecutionResult with execution details
 
     """
-    start_time = time.time()
+    with _measure_time() as get_duration:
+        try:
+            result = subprocess.run(  # noqa: S602
+                command,
+                shell=True,
+                cwd=cwd,
+                capture_output=not stream_output,
+                text=True,
+                check=False,
+                timeout=timeout,
+            )
 
-    try:
-        result = subprocess.run(  # noqa: S602
-            command,
-            shell=True,
-            cwd=cwd,
-            capture_output=not stream_output,
-            text=True,
-            check=False,
-            timeout=timeout,
-        )
+            # If streaming, stdout/stderr are None, capture separately
+            if stream_output:
+                stdout = ""
+                stderr = ""
+            else:
+                stdout = result.stdout or ""
+                stderr = result.stderr or ""
 
-        duration = time.time() - start_time
+            return ExecutionResult(
+                success=result.returncode == 0,
+                returncode=result.returncode,
+                stdout=stdout,
+                stderr=stderr,
+                duration=get_duration(),
+            )
 
-        # If streaming, stdout/stderr are None, capture separately
-        if stream_output:
-            stdout = ""
-            stderr = ""
-        else:
-            stdout = result.stdout or ""
-            stderr = result.stderr or ""
+        except subprocess.TimeoutExpired:
+            return ExecutionResult(
+                success=False,
+                returncode=-1,
+                stdout="",
+                stderr=f"Command timed out after {timeout}s",
+                duration=get_duration(),
+            )
 
-        return ExecutionResult(
-            success=result.returncode == 0,
-            returncode=result.returncode,
-            stdout=stdout,
-            stderr=stderr,
-            duration=duration,
-        )
-
-    except subprocess.TimeoutExpired:
-        duration = time.time() - start_time
-        return ExecutionResult(
-            success=False,
-            returncode=-1,
-            stdout="",
-            stderr=f"Command timed out after {timeout}s",
-            duration=duration,
-        )
-
-    except Exception as e:
-        duration = time.time() - start_time
-        return ExecutionResult(
-            success=False,
-            returncode=-1,
-            stdout="",
-            stderr=str(e),
-            duration=duration,
-        )
+        except Exception as e:
+            return ExecutionResult(
+                success=False,
+                returncode=-1,
+                stdout="",
+                stderr=str(e),
+                duration=get_duration(),
+            )

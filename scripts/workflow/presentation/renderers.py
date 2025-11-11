@@ -35,9 +35,26 @@ def render_command_execution(
 
     if show_output:
         if result.stdout:
-            console.print(result.stdout)
+            # Limit output to avoid overwhelming the UI
+            # Show first 100 lines, then indicate if there's more
+            stdout_lines = result.stdout.splitlines()
+            max_lines = 100
+            if len(stdout_lines) > max_lines:
+                for line in stdout_lines[:max_lines]:
+                    console.print(line)
+                console.print(f"[dim]... ({len(stdout_lines) - max_lines} more lines)[/dim]")
+            else:
+                console.print(result.stdout)
         if result.stderr:
-            console.print_warning(result.stderr)
+            # Limit stderr output as well
+            stderr_lines = result.stderr.splitlines()
+            max_lines = 50
+            if len(stderr_lines) > max_lines:
+                for line in stderr_lines[:max_lines]:
+                    console.print_warning(line)
+                console.print_warning(f"... ({len(stderr_lines) - max_lines} more lines)")
+            else:
+                console.print_warning(result.stderr)
 
     status = format_status(result.success)
     duration = format_duration(result.duration)

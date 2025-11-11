@@ -1,6 +1,8 @@
 """Console interface - abstraction for console operations."""
 
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
+from typing import ContextManager
 
 from rich.console import Console as RichConsoleType
 from rich.panel import Panel
@@ -33,6 +35,34 @@ class ConsoleInterface(ABC):
     @abstractmethod
     def print_warning(self, message: str) -> None:
         """Print warning message."""
+
+    def task(self, description: str, spinner: str = "dots") -> ContextManager[None]:
+        """Context manager for showing a task with spinner.
+
+        This is optional - implementations can provide progress indicators.
+        Default implementation just prints the description.
+
+        Args:
+            description: Task description
+            spinner: Spinner style (optional, implementation-specific)
+
+        Returns:
+            Context manager - use with 'with' statement
+
+        Example:
+            with console.task("Running checks..."):
+                # Do work here
+                pass
+
+        """
+        return self._task_impl(description, spinner)
+
+    @contextmanager
+    def _task_impl(self, description: str, spinner: str):  # noqa: ARG002
+        """Internal implementation of task context manager."""
+        self.print(f"[cyan]▶ {description}[/cyan]")
+        yield
+        # Default implementation doesn't show completion
 
 
 class RichConsole(ConsoleInterface):

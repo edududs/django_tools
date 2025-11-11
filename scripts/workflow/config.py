@@ -22,7 +22,7 @@ class WorkflowConfig:
         self.config_file = DEFAULT_CONFIG_FILE
         self._manager = ConfigManager(self.config_file)
 
-    def get_config(self) -> dict:
+    def get_config(self) -> dict[str, str]:
         """Get current configuration as dict (for backward compatibility).
 
         Returns:

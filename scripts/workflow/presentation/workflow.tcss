@@ -1,0 +1,329 @@
+/* Workflow TUI Styles - Green Theme */
+
+/* App Container */
+#app-container {
+    width: 100%;
+    height: 100%;
+    layout: vertical;
+}
+
+#screen-container {
+    width: 100%;
+    height: 1fr;
+    layout: vertical;
+}
+
+/* Header */
+Header {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-align: center;
+    padding: 1;
+    border-bottom: wide rgb(50, 205, 50);
+}
+
+Header > .header--spacer {
+    background: rgb(34, 139, 34);
+}
+
+Header > .header--clock {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-style: bold;
+}
+
+Header > .header--title {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-style: bold;
+}
+
+/* Footer */
+Footer {
+    background: rgb(30, 35, 30);
+    color: rgb(150, 180, 150);
+    padding: 1;
+    border-top: wide rgb(34, 139, 34);
+    text-align: center;
+}
+
+Footer > .footer--key {
+    background: rgb(30, 35, 30);
+    color: rgb(220, 255, 220);
+    text-style: bold;
+}
+
+Footer > .footer--key:hover {
+    background: rgb(34, 139, 34) 30%;
+}
+
+/* Tabs */
+Tabs {
+    background: rgb(30, 35, 30);
+    border-bottom: wide rgb(34, 139, 34);
+}
+
+Tabs:focus {
+    border-bottom: wide rgb(50, 205, 50);
+}
+
+Tabs > Tab {
+    padding: 1 3;
+    background: rgb(30, 35, 30);
+    color: rgb(150, 180, 150);
+    min-width: 12;
+}
+
+Tabs > Tab:hover {
+    background: rgb(34, 139, 34) 30%;
+    color: rgb(220, 255, 220);
+}
+
+Tabs > Tab.--active {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-style: bold;
+    border-bottom: thick rgb(50, 205, 50);
+}
+
+/* Screens */
+CheckScreen,
+PushScreen,
+TagScreen,
+VersionScreen,
+ConfigScreen {
+    width: 100%;
+    height: 100%;
+    padding: 1;
+    layout: vertical;
+    background: rgb(25, 30, 25);
+}
+
+/* Screen Titles */
+#title {
+    width: 100%;
+    height: 3;
+    text-align: center;
+    padding: 1;
+    background: rgb(34, 139, 34) 20%;
+    border: wide rgb(34, 139, 34);
+    text-style: bold;
+    color: rgb(220, 255, 220);
+}
+
+/* Status Widgets */
+#check-status,
+#push-status,
+#tag-status,
+#version-status,
+#config-status {
+    width: 100%;
+    height: 1;
+    padding: 0 1;
+    background: rgb(30, 35, 30);
+    border-bottom: solid rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-align: left;
+}
+
+/* Log Container */
+#log-container {
+    width: 100%;
+    height: 1fr;
+    layout: vertical;
+    overflow: hidden;
+}
+
+/* Log Widgets */
+RichLog {
+    width: 100%;
+    height: 100%;
+    background: rgb(20, 25, 20);
+    border: wide rgb(30, 35, 30);
+    padding: 1;
+    scrollbar-size: 1 1;
+    scrollbar-gutter: stable;
+    color: rgb(220, 255, 220);
+}
+
+RichLog:focus {
+    border: wide rgb(50, 205, 50);
+}
+
+/* Button Containers */
+#check-buttons,
+#push-buttons,
+#tag-buttons,
+#version-buttons,
+#config-buttons {
+    width: 100%;
+    height: auto;
+    padding: 1 2;
+    align: center middle;
+    background: rgb(30, 35, 30);
+    border-top: wide rgb(34, 139, 34);
+}
+
+/* Buttons - Improved Styling */
+Button {
+    margin: 0 2;
+    padding: 2 4;
+    min-width: 16;
+    min-height: 3;
+    text-align: center;
+    border: solid rgb(34, 139, 34);
+    background: rgb(30, 35, 30);
+    color: rgb(220, 255, 220);
+}
+
+Button:hover {
+    background: rgb(34, 139, 34) 40%;
+    color: rgb(220, 255, 220);
+    text-style: bold;
+    border: solid rgb(50, 205, 50);
+}
+
+Button:focus {
+    border: thick rgb(50, 205, 50);
+    background: rgb(34, 139, 34) 50%;
+    color: rgb(220, 255, 220);
+    text-style: bold;
+}
+
+Button.--active {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    text-style: bold;
+    border: thick rgb(50, 205, 50);
+    min-width: 16;
+    min-height: 3;
+    padding: 2 4;
+}
+
+/* Button Variants */
+Button.primary {
+    background: rgb(34, 139, 34);
+    color: rgb(220, 255, 220);
+    border: solid rgb(50, 205, 50);
+}
+
+Button.primary:hover {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: solid rgb(144, 238, 144);
+}
+
+Button.primary:focus {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: thick rgb(144, 238, 144);
+    text-style: bold;
+}
+
+Button.primary.--active {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: thick rgb(144, 238, 144);
+    text-style: bold;
+}
+
+Button.success {
+    background: rgb(0, 200, 0);
+    color: rgb(220, 255, 220);
+    border: solid rgb(50, 205, 50);
+}
+
+Button.success:hover {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: solid rgb(144, 238, 144);
+}
+
+Button.success:focus {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: thick rgb(144, 238, 144);
+    text-style: bold;
+}
+
+Button.success.--active {
+    background: rgb(50, 205, 50);
+    color: rgb(20, 25, 20);
+    border: thick rgb(144, 238, 144);
+    text-style: bold;
+}
+
+Button.warning {
+    background: rgb(255, 200, 0);
+    color: rgb(20, 25, 20);
+    border: solid rgb(34, 139, 34);
+}
+
+Button.warning:hover {
+    background: rgb(255, 200, 0) 80%;
+    color: rgb(20, 25, 20);
+    border: solid rgb(50, 205, 50);
+}
+
+Button.warning:focus {
+    background: rgb(255, 200, 0) 80%;
+    color: rgb(20, 25, 20);
+    border: thick rgb(50, 205, 50);
+    text-style: bold;
+}
+
+Button.warning.--active {
+    background: rgb(255, 200, 0) 80%;
+    color: rgb(20, 25, 20);
+    border: thick rgb(50, 205, 50);
+    text-style: bold;
+}
+
+Button.error {
+    background: rgb(220, 50, 50);
+    color: rgb(220, 255, 220);
+    border: solid rgb(34, 139, 34);
+}
+
+Button.error:hover {
+    background: rgb(220, 50, 50) 80%;
+    color: rgb(220, 255, 220);
+    border: solid rgb(50, 205, 50);
+}
+
+Button.error:focus {
+    background: rgb(220, 50, 50) 80%;
+    color: rgb(220, 255, 220);
+    border: thick rgb(50, 205, 50);
+    text-style: bold;
+}
+
+Button.error.--active {
+    background: rgb(220, 50, 50) 80%;
+    color: rgb(220, 255, 220);
+    border: thick rgb(50, 205, 50);
+    text-style: bold;
+}
+
+/* Static Text */
+Static {
+    color: rgb(220, 255, 220);
+}
+
+/* Rich Markup Colors in Log */
+RichLog {
+    color: rgb(220, 255, 220);
+}
+
+/* Scrollbar Styling */
+RichLog > ScrollBar {
+    background: rgb(30, 35, 30);
+}
+
+RichLog > ScrollBar > ScrollBarSlider {
+    background: rgb(34, 139, 34);
+}
+
+RichLog > ScrollBar > ScrollBarSlider:hover {
+    background: rgb(50, 205, 50);
+}

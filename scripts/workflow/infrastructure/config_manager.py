@@ -71,14 +71,23 @@ class ConfigManager:
         config.env_root = str(env_root.resolve())
         self.save(config)
 
-    def clear_env_root(self) -> None:
-        """Clear environment root configuration."""
+    def _clear_config_field(self, field_name: str) -> None:
+        """Clear a configuration field and clean up file if empty.
+
+        Args:
+            field_name: Name of the field to clear ('env_root' or 'target_path')
+
+        """
         config = self.load()
-        config.env_root = None
+        setattr(config, field_name, None)
         if config.env_root is None and config.target_path is None:
             self.config_file.unlink(missing_ok=True)
         else:
             self.save(config)
+
+    def clear_env_root(self) -> None:
+        """Clear environment root configuration."""
+        self._clear_config_field("env_root")
 
     def get_target_path(self) -> Path | None:
         """Get configured target path for validation.
@@ -105,12 +114,7 @@ class ConfigManager:
 
     def clear_target_path(self) -> None:
         """Clear target path configuration."""
-        config = self.load()
-        config.target_path = None
-        if config.env_root is None and config.target_path is None:
-            self.config_file.unlink(missing_ok=True)
-        else:
-            self.save(config)
+        self._clear_config_field("target_path")
 
     def clear(self) -> None:
         """Clear all configuration."""

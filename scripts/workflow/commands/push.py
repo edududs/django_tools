@@ -1,5 +1,6 @@
 """Push commands for git operations."""
 
+import shlex
 from pathlib import Path
 
 import typer
@@ -12,16 +13,17 @@ from ..infrastructure import (
     get_unpushed_tags,
     has_uncommitted_changes,
 )
-from ..presentation import RichConsole, render_command_execution
-
-console = RichConsole()
+from ..presentation import ConsoleInterface, RichConsole, render_command_execution
 
 
-def _push_commits(project_root: Path, force: bool = False, check_first: bool = True) -> bool:
+def _push_commits(
+    project_root: Path, console: ConsoleInterface, force: bool = False, check_first: bool = True
+) -> bool:
     """Push commits to remote.
 
     Args:
         project_root: Project root directory
+        console: Console interface for output
         force: Force push (use with caution)
         check_first: Check if there are commits to push first
 
@@ -45,7 +47,10 @@ def _push_commits(project_root: Path, force: bool = False, check_first: bool = T
         console.print_success(f"Found {commits_count} commit(s) to push.")
 
     # Push commits
-    push_cmd = "git push --force" if force else "git push"
+    push_cmd_parts = ["git", "push"]
+    if force:
+        push_cmd_parts.append("--force")
+    push_cmd = " ".join(shlex.quote(part) for part in push_cmd_parts)
     result = execute_command(push_cmd, cwd=project_root)
     render_command_execution(console, "Push commits", push_cmd, result)
 
@@ -56,11 +61,12 @@ def _push_commits(project_root: Path, force: bool = False, check_first: bool = T
     return False
 
 
-def _push_tags(project_root: Path, check_first: bool = True) -> bool:
+def _push_tags(project_root: Path, console: ConsoleInterface, check_first: bool = True) -> bool:
     """Push tags to remote.
 
     Args:
         project_root: Project root directory
+        console: Console interface for output
         check_first: Check if there are tags to push first
 
     Returns:
@@ -96,6 +102,7 @@ def _push_tags(project_root: Path, check_first: bool = True) -> bool:
 
 def push_command(
     project_root: Path,
+    console: ConsoleInterface | None = None,
     tags_only: bool = False,
     force: bool = False,
     skip_check: bool = False,
@@ -104,6 +111,7 @@ def push_command(
 
     Args:
         project_root: Project root directory
+        console: Console interface for output (defaults to RichConsole if None)
         tags_only: Push only tags, not commits
         force: Force push (use with caution)
         skip_check: Skip checking if there's anything to push
@@ -112,6 +120,8 @@ def push_command(
         True if push succeeded, False otherwise
 
     """
+    console = console or RichConsole()
+
     if force and not tags_only:
         console.print_warning("⚠ Warning: Force push enabled!")
         has_uncommitted = has_uncommitted_changes()
@@ -126,11 +136,11 @@ def push_command(
     check_first = not skip_check
 
     if tags_only:
-        return _push_tags(project_root, check_first=check_first)
+        return _push_tags(project_root, console, check_first=check_first)
 
     # Push commits first, then tags
-    commits_success = _push_commits(project_root, force=force, check_first=check_first)
-    tags_success = _push_tags(project_root, check_first=check_first)
+    commits_success = _push_commits(project_root, console, force=force, check_first=check_first)
+    tags_success = _push_tags(project_root, console, check_first=check_first)
 
     success = commits_success and tags_success
 

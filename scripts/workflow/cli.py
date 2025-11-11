@@ -1,5 +1,6 @@
 """CLI interface for workflow commands."""
 
+from itertools import count
 from pathlib import Path
 
 import typer
@@ -8,6 +9,7 @@ from .commands import check_command, push_command, tag_command, version_command
 from .domain.project import find_project_root, find_target_path, validate_project_root
 from .infrastructure import ConfigManager
 from .presentation import RichConsole, render_config
+from .types import TagAction  # pyright: ignore[reportMissingImports]
 
 app = typer.Typer(
     name="workflow",
@@ -18,6 +20,7 @@ console = RichConsole()
 
 # Default config file path
 DEFAULT_CONFIG_FILE = Path.home() / ".workflow_config.json"
+_config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
 
 
 def _get_project_root(path: str | None = None, use_config: bool = True) -> Path:
@@ -44,8 +47,7 @@ def _get_project_root(path: str | None = None, use_config: bool = True) -> Path:
 
     # Check for configured environment root
     if use_config:
-        config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
-        env_root = config_manager.get_env_root()
+        env_root = _config_manager.get_env_root()
         if env_root and validate_project_root(env_root):
             return env_root
 
@@ -57,6 +59,47 @@ def _get_project_root(path: str | None = None, use_config: bool = True) -> Path:
         raise typer.Exit(1)
 
     return project_root
+
+
+def _run_validation(
+    project_root: Path,
+    ruff: bool = True,
+    pyright: bool = False,
+    tests: bool = False,
+    fix: bool = False,
+) -> bool:
+    """Run validation checks.
+
+    Args:
+        project_root: Project root directory
+        ruff: Run Ruff checks
+        pyright: Run Pyright checks
+        tests: Run tests
+        fix: Auto-fix issues
+
+    Returns:
+        True if validation passed, False otherwise
+
+    """
+    console.print("\n[bold cyan]Running validation...[/bold cyan]\n")
+
+    target_path = _get_target_path(use_config=True)
+    success = check_command(
+        project_root,
+        ruff=ruff,
+        pyright=pyright,
+        tests=tests,
+        fix=fix,
+        target_path=target_path,
+    )
+
+    if not success:
+        console.print_error("\nValidation failed.")
+        console.print_warning("Use --no-validate to skip validation (not recommended)")
+        return False
+
+    console.print_success("\n✓ Validation passed!\n")
+    return True
 
 
 def _get_target_path(target: str | None = None, use_config: bool = True) -> Path | None:
@@ -82,8 +125,7 @@ def _get_target_path(target: str | None = None, use_config: bool = True) -> Path
 
     # Check for configured target path
     if use_config:
-        config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
-        config = config_manager.load()
+        config = _config_manager.load()
         return find_target_path(config)
 
     return None
@@ -237,9 +279,12 @@ def release(
     project_root = _get_project_root(path)
     target_path = _get_target_path(use_config=True)
 
+    step_counter = count(1)
+
     # Step 1: Auto-fix if requested
     if fix:
-        console.print("\n[bold cyan]Step 1: Auto-fixing issues...[/bold cyan]\n")
+        step_num = next(step_counter)
+        console.print(f"\n[bold cyan]Step {step_num}: Auto-fixing issues...[/bold cyan]\n")
         fix_success = check_command(
             project_root,
             ruff=True,
@@ -254,26 +299,14 @@ def release(
 
     # Step 2: Run full validation if requested
     if validate:
-        step_num = "2" if fix else "1"
+        step_num = next(step_counter)
         console.print(f"\n[bold cyan]Step {step_num}: Running full validation...[/bold cyan]\n")
-        validation_success = check_command(
-            project_root,
-            ruff=True,
-            pyright=True,
-            tests=True,
-            fix=False,
-            target_path=target_path,
-        )
-
-        if not validation_success:
-            console.print_error("\nValidation failed. Release aborted.")
+        if not _run_validation(project_root, ruff=True, pyright=True, tests=True):
             raise typer.Exit(1)
-
-        console.print_success("\n✓ Validation passed!\n")
 
     # Step 3: Push commits if requested
     if push_commits:
-        step_num = "3" if (fix or validate) else "1"
+        step_num = next(step_counter)
         console.print(f"\n[bold cyan]Step {step_num}: Pushing commits...[/bold cyan]\n")
         push_success = push_command(
             project_root,
@@ -289,11 +322,11 @@ def release(
         console.print_success("\n✓ Commits pushed successfully!\n")
 
     # Step 4: Create tag
-    step_num = "4" if (fix or validate or push_commits) else "1"
+    step_num = next(step_counter)
     console.print(f"\n[bold cyan]Step {step_num}: Creating release tag...[/bold cyan]\n")
     success = tag_command(
         project_root,
-        action="create",
+        action=TagAction.CREATE,
         push=push_after,
         force=force,
         skip_confirm=True,  # Auto-confirm in release workflow
@@ -380,21 +413,8 @@ def deploy(
     # Step 1: Full validation
     if not skip_validation:
         console.print("\n[bold cyan]Step 1/3: Running full validation...[/bold cyan]\n")
-        target_path = _get_target_path(use_config=True)
-        validation_success = check_command(
-            project_root,
-            ruff=True,
-            pyright=True,
-            tests=True,
-            fix=False,
-            target_path=target_path,
-        )
-
-        if not validation_success:
-            console.print_error("\nValidation failed. Deployment aborted.")
+        if not _run_validation(project_root, ruff=True, pyright=True, tests=True):
             raise typer.Exit(1)
-
-        console.print_success("\n✓ Validation passed!\n")
     else:
         console.print_warning("\n⚠ Skipping validation (not recommended)\n")
 
@@ -433,10 +453,8 @@ def config(
     - set-target: Set target path for validation
     - clear: Clear all configuration
     """
-    config_manager = ConfigManager(DEFAULT_CONFIG_FILE)
-
     if action == "show":
-        config = config_manager.load()
+        config = _config_manager.load()
         render_config(console, config, DEFAULT_CONFIG_FILE)
 
     elif action == "set-env":
@@ -450,7 +468,7 @@ def config(
             console.print_error(f"Error: pyproject.toml not found in {env_root}")
             raise typer.Exit(1)
 
-        config_manager.set_env_root(env_root)
+        _config_manager.set_env_root(env_root)
         console.print_success(f"✓ Environment root set to: {env_root}")
         console.print(
             "\n[dim]All workflow commands will now use this environment's configuration.[/dim]"
@@ -467,12 +485,12 @@ def config(
             console.print_error(f"Error: Directory {target_path} does not exist")
             raise typer.Exit(1)
 
-        config_manager.set_target_path(target_path)
+        _config_manager.set_target_path(target_path)
         console.print_success(f"✓ Target path set to: {target_path}")
         console.print("\n[dim]Validation will be performed on this directory.[/dim]")
 
     elif action == "clear":
-        config_manager.clear()
+        _config_manager.clear()
         console.print_success("✓ Configuration cleared")
 
     else:
