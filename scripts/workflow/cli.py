@@ -9,7 +9,8 @@ from .commands import check_command, push_command, tag_command, version_command
 from .domain.project import find_project_root, find_target_path, validate_project_root
 from .infrastructure import ConfigManager
 from .presentation import RichConsole, render_config
-from .types import TagAction  # pyright: ignore[reportMissingImports]
+from .types import TagAction
+from .utils.constants import SEPARATOR_WIDTH
 
 app = typer.Typer(
     name="workflow",
@@ -216,23 +217,12 @@ def push(
     project_root = _get_project_root(path)
 
     # Run validation if requested
-    if validate and not force:
-        console.print("\n[bold cyan]Running validation before push...[/bold cyan]\n")
-
-        target_path = _get_target_path(use_config=True)
-        if not check_command(
-            project_root,
-            ruff=True,
-            pyright=False,
-            tests=False,
-            fix=False,
-            target_path=target_path,
-        ):
-            console.print_error("\nValidation failed. Push aborted.")
-            console.print_warning("Use --no-validate to skip validation (not recommended)")
-            raise typer.Exit(1)
-
-        console.print_success("\n✓ Validation passed!\n")
+    if (
+        validate
+        and not force
+        and not _run_validation(project_root, ruff=True, pyright=False, tests=False, fix=False)
+    ):
+        raise typer.Exit(1)
 
     # Execute push
     success = push_command(
@@ -336,7 +326,7 @@ def release(
         raise typer.Exit(1)
 
     # Final message
-    console.print("\n" + "=" * 80 + "\n")
+    console.print(f"\n{'=' * SEPARATOR_WIDTH}\n")
     success_msg = (
         "[bold green]✓ Release completed successfully![/bold green]\n"
         "[dim]Tag created and ready for deployment.[/dim]"
@@ -432,7 +422,7 @@ def deploy(
         raise typer.Exit(1)
 
     # Final message
-    console.print("\n" + "=" * 80 + "\n")
+    console.print(f"\n{'=' * SEPARATOR_WIDTH}\n")
     success_msg = (
         "[bold green]✓ Deployment completed successfully![/bold green]\n"
         "[dim]All changes have been validated and pushed to remote.[/dim]"

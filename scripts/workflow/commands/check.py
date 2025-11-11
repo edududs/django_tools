@@ -1,6 +1,5 @@
 """Quality check commands (ruff, pyright, tests)."""
 
-from contextlib import contextmanager
 from pathlib import Path
 
 from ..domain.validation import ValidationPlan
@@ -12,15 +11,8 @@ from ..presentation import (
     render_validation_summary,
 )
 from ..types import CommandResult, ExecutionResult, JobResult
-
-
-@contextmanager
-def _measure_time():
-    """Context manager for measuring execution time."""
-    from time import perf_counter
-
-    start = perf_counter()
-    yield lambda: perf_counter() - start
+from ..utils.constants import SEPARATOR_WIDTH
+from ..utils.timing import measure_time
 
 
 def _create_command_result(name: str, command: str, result: ExecutionResult) -> CommandResult:
@@ -73,7 +65,7 @@ def _run_single_command_job(
     """
     console.print_panel(panel_title, style=panel_style)
 
-    with _measure_time() as get_duration:
+    with measure_time() as get_duration:
         # Always capture output when using Textual - never stream directly to stdout/stderr
         result = execute_command(command, cwd=project_root, stream_output=False)
         render_command_execution(console, command_name, command, result, show_output=show_output)
@@ -120,7 +112,7 @@ def _run_ruff_job(
         ),
     ]
 
-    with _measure_time() as get_duration:
+    with measure_time() as get_duration:
         commands: list[CommandResult] = []
         for name, cmd in command_specs:
             # Always capture output when using Textual - never stream directly to stdout/stderr
@@ -240,13 +232,13 @@ def check_command(
     if not results:
         return True
 
-    console.print("\n" + "=" * 80 + "\n")
+    console.print(f"\n{'=' * SEPARATOR_WIDTH}\n")
     render_validation_summary(console, results)
 
     total_duration = sum(job.duration for job in results)
     all_success = all(job.success for job in results)
 
-    console.print("\n" + "=" * 80 + "\n")
+    console.print(f"\n{'=' * SEPARATOR_WIDTH}\n")
 
     if all_success:
         success_msg = f"[bold green]✓ All checks passed![/bold green]\n[dim]Total duration: {total_duration:.2f}s[/dim]"

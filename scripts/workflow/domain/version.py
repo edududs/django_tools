@@ -1,9 +1,8 @@
 # pyright: reportAttributeAccessIssue=false
 """Version management - pure version logic."""
 
-import re
-
 from ..types import BumpType
+from ..utils.constants import VERSION_PATTERN
 
 
 def get_version_from_pyproject(content: str) -> str:
@@ -19,7 +18,7 @@ def get_version_from_pyproject(content: str) -> str:
         ValueError: If version not found
 
     """
-    match = re.search(r'version = "([^"]+)"', content)
+    match = VERSION_PATTERN.search(content)
 
     if not match:
         msg = "Could not find version in pyproject.toml"

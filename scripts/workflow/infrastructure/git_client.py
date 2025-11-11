@@ -1,9 +1,9 @@
 """Git client - pure git operations via subprocess."""
 
-import re
 import subprocess
 from pathlib import Path
 
+from ..utils.constants import VERSION_PATTERN
 from .file_system import read_pyproject
 
 
@@ -130,7 +130,7 @@ def get_current_version(project_root: Path) -> str:
 
     """
     content = read_pyproject(project_root)
-    match = re.search(r'version = "([^"]+)"', content)
+    match = VERSION_PATTERN.search(content)
 
     if not match:
         msg = "Could not find version in pyproject.toml"

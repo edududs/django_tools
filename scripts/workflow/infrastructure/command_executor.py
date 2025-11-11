@@ -1,19 +1,10 @@
 """Command execution - pure subprocess execution without presentation."""
 
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
 
 from ..types import ExecutionResult
-
-
-@contextmanager
-def _measure_time():
-    """Context manager for measuring execution time."""
-    from time import perf_counter
-
-    start = perf_counter()
-    yield lambda: perf_counter() - start
+from ..utils.timing import measure_time
 
 
 def execute_command(
@@ -37,7 +28,7 @@ def execute_command(
         ExecutionResult with execution details
 
     """
-    with _measure_time() as get_duration:
+    with measure_time() as get_duration:
         try:
             result = subprocess.run(  # noqa: S602
                 command,

@@ -5,8 +5,9 @@ from contextlib import contextmanager
 from typing import ContextManager
 
 from rich.console import Console as RichConsoleType
-from rich.panel import Panel
 from rich.table import Table
+
+from .formatters import create_panel
 
 
 class ConsoleInterface(ABC):
@@ -83,7 +84,7 @@ class RichConsole(ConsoleInterface):
 
     def print_panel(self, title: str, subtitle: str = "", style: str = "blue") -> None:
         """Print a panel."""
-        panel = Panel.fit(title, subtitle=subtitle, border_style=style)
+        panel = create_panel(title, subtitle=subtitle, style=style)
         self._console.print(panel)
 
     def print_table(self, table: Table) -> None:
@@ -101,7 +102,3 @@ class RichConsole(ConsoleInterface):
     def print_warning(self, message: str) -> None:
         """Print warning message."""
         self._console.print(f"[yellow]{message}[/yellow]")
-
-
-# Default console instance
-console = RichConsole()

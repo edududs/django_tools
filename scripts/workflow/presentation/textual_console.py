@@ -9,13 +9,13 @@ from typing import ContextManager
 
 from rich.console import Console as RichConsoleType
 from rich.panel import Panel
-from rich.status import Status
 from rich.table import Table
 
 from textual.app import App
 from textual.widgets import RichLog, Static
 
 from .console import ConsoleInterface
+from .formatters import create_panel
 
 
 class TextualConsole(ConsoleInterface):
@@ -196,7 +196,7 @@ class TextualConsole(ConsoleInterface):
 
         """
         # RichLog supports Rich renderables, so we can use Panel directly
-        panel = Panel.fit(title, subtitle=subtitle, border_style=style)
+        panel = create_panel(title, subtitle=subtitle, style=style)
         self._write_safe(panel)  # RichLog.write() accepts Rich renderables
 
     def print_table(self, table: Table) -> None:
