@@ -3,10 +3,19 @@
 import time
 from pathlib import Path
 
-from ..domain.validation import ValidationPlan, create_validation_plan, should_run_pyright, should_run_ruff, should_run_tests
+from ..domain.validation import (
+    create_validation_plan,
+    should_run_pyright,
+    should_run_ruff,
+    should_run_tests,
+)
 from ..infrastructure import execute_command
-from ..presentation import RichConsole, create_panel, render_command_execution, render_validation_summary
-from ..types import CommandResult, ExecutionResult, JobResult
+from ..presentation import (
+    RichConsole,
+    render_command_execution,
+    render_validation_summary,
+)
+from ..types import CommandResult, JobResult
 
 console = RichConsole()
 
@@ -35,9 +44,10 @@ def _run_ruff_job(
     check_target = str(target_path) if target_path else "src/"
 
     # Build command list
+    fix_flags = "--fix --unsafe-fixes" if fix else ""
     command_specs = [
         ("Verify Ruff installation", "uv run ruff --version"),
-        ("Run Ruff linting", f"uv run ruff check {check_target} {'--fix' if fix else ''}"),
+        ("Run Ruff linting", f"uv run ruff check {check_target} {fix_flags}".strip()),
         (
             "Run Ruff format" if fix else "Run Ruff format check",
             f"uv run ruff format {'' if fix else '--check'} {check_target}",
@@ -82,7 +92,9 @@ def _run_pyright_job(project_root: Path, show_output: bool = True) -> JobResult:
     start_time = time.time()
 
     result = execute_command("pyright", cwd=project_root, stream_output=show_output)
-    render_command_execution(console, "Run Pyright type checking", "pyright", result, show_output=show_output)
+    render_command_execution(
+        console, "Run Pyright type checking", "pyright", result, show_output=show_output
+    )
 
     commands = [
         CommandResult(
@@ -118,7 +130,9 @@ def _run_tests_job(project_root: Path, show_output: bool = True) -> JobResult:
 
     cmd = "uv run pytest src/ -v --cov=src --cov-report=term-missing"
     result = execute_command(cmd, cwd=project_root, stream_output=show_output)
-    render_command_execution(console, "Run tests with coverage", cmd, result, show_output=show_output)
+    render_command_execution(
+        console, "Run tests with coverage", cmd, result, show_output=show_output
+    )
 
     commands = [
         CommandResult(
@@ -210,7 +224,9 @@ def check_command(
     error_msg += f"\n[dim]Total duration: {total_duration:.2f}s[/dim]"
 
     if fix:
-        error_msg += "\n[cyan]💡 Tip: Some issues were auto-fixed. Review changes before committing.[/cyan]"
+        error_msg += (
+            "\n[cyan]💡 Tip: Some issues were auto-fixed. Review changes before committing.[/cyan]"
+        )
     else:
         error_msg += "\n[cyan]💡 Tip: Run with --fix to auto-fix some issues.[/cyan]"
 
