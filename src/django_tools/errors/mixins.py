@@ -34,7 +34,7 @@ class NormalizeErrorsMixin:
     """Mixin to add error conversion methods to a class."""
 
     @classmethod
-    def normalize(cls, error: Any, code: int | None = None) -> Errors:  # noqa: PLR0911
+    def normalize(cls, error: Any, code: int | None = None) -> Errors:
         """Converts any error type to Errors (classmethod).
 
         Args:

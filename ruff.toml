@@ -96,6 +96,7 @@ ignore = [
     "S603",      # subprocess.call with shell=True
     "S607",      # subprocess.call with executable
     "TRY003",    # Avoid bare except
+    "PLR0911",   # Too many return statements
     "PLR0912",   # Too many branches
     "PLR0915",   # Too many statements
     "TID252",    # Banned imports

@@ -452,7 +452,9 @@ def config(
 
         config_manager.set_env_root(env_root)
         console.print_success(f"✓ Environment root set to: {env_root}")
-        console.print("\n[dim]All workflow commands will now use this environment's configuration.[/dim]")
+        console.print(
+            "\n[dim]All workflow commands will now use this environment's configuration.[/dim]"
+        )
 
     elif action == "set-target":
         if not path:
